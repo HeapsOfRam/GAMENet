@@ -102,3 +102,9 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+# ryan's updates
+data/prepare_data/data/
+data/prepare_data/drug-DDI.csv
+error.txt
+sample_run.txt

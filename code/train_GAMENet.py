@@ -92,11 +92,20 @@ def main():
     if not os.path.exists(os.path.join("saved", model_name)):
         os.makedirs(os.path.join("saved", model_name))
 
-    data_path = '../data/records_final.pkl'
-    voc_path = '../data/voc_final.pkl'
+    #data_path = '../data/records_final.pkl'
+    #voc_path = '../data/voc_final.pkl'
 
-    ehr_adj_path = '../data/ehr_adj_final.pkl'
-    ddi_adj_path = '../data/ddi_A_final.pkl'
+    #ehr_adj_path = '../data/ehr_adj_final.pkl'
+    #ddi_adj_path = '../data/ddi_A_final.pkl'
+
+    path_prefix = "../data/"
+
+    data_path = '{}records_final.pkl'.format(path_prefix)
+    voc_path = '{}voc_final.pkl'.format(path_prefix)
+
+    ehr_adj_path = '{}ehr_adj_final.pkl'.format(path_prefix)
+    ddi_adj_path = '{}ddi_A_final.pkl'.format(path_prefix)
+
     device = torch.device('cuda:0')
 
     ehr_adj = dill.load(open(ehr_adj_path, 'rb'))

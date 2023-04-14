@@ -28,6 +28,11 @@ ENV PATH=/opt/conda/envs/myenv/bin:$PATH
 
 
 COPY . /app
+COPY data/prepare_data/read_functions.py /app/code/
+COPY data/prepare_data/create_vocabulary.py /app/code/
+COPY data/prepare_data/construct_adj.py /app/code/
+COPY data/prepare_data/prepare_data.py /app/code/
+
 WORKDIR /app/code/
 
 RUN pip install --upgrade pip
