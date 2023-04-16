@@ -3,17 +3,17 @@ import numpy as np
 
 import sys
 sys.path.append("..")
-from util import multi_label_metric
+from util import multi_label_metric, get_pkl_path
 
 #data_path = '../../data/records_final.pkl'
 #voc_path = '../../data/voc_final.pkl'
 
 #ddi_adj_path = '../../data/ddi_A_final.pkl'
 
-data_path = '../data/records_final.pkl'
-voc_path = '../data/voc_final.pkl'
+data_path = get_pkl_path('records_final.pkl')
+voc_path = get_pkl_path('voc_final.pkl')
 
-ddi_adj_path = '../data/ddi_A_final.pkl'
+ddi_adj_path = get_pkl_path('ddi_A_final.pkl')
 
 
 data = dill.load(open(data_path, 'rb'))

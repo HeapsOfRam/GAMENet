@@ -1,5 +1,6 @@
 import dill
 import pandas as pd
+from util import get_pkl_path
 
 class Voc(object):
     def __init__(self):
@@ -27,7 +28,9 @@ def create_str_token_mapping(df):
         pro_voc.add_sentence(row['PRO_CODE'])
 
     #dill.dump(obj={'diag_voc':diag_voc, 'med_voc':med_voc ,'pro_voc':pro_voc}, file=open('voc_final.pkl','wb'))
-    dill.dump(obj={'diag_voc':diag_voc, 'med_voc':med_voc ,'pro_voc':pro_voc}, file=open('../data/voc_final.pkl','wb'))
+    #dill.dump(obj={'diag_voc':diag_voc, 'med_voc':med_voc ,'pro_voc':pro_voc}, file=open('../data/voc_final.pkl','wb'))
+    dill.dump(obj={'diag_voc':diag_voc, 'med_voc':med_voc ,'pro_voc':pro_voc}, file=open(get_pkl_path('voc_final.pkl'),'wb'))
+
 
     return diag_voc, med_voc, pro_voc
 
@@ -44,5 +47,6 @@ def create_patient_record(df, diag_voc, med_voc, pro_voc):
             patient.append(admission)
         records.append(patient)
     #dill.dump(obj=records, file=open('records_final.pkl', 'wb'))
-    dill.dump(obj=records, file=open('../data/records_final.pkl', 'wb'))
+    #dill.dump(obj=records, file=open('../data/records_final.pkl', 'wb'))
+    dill.dump(obj=records, file=open(get_pkl_path('records_final.pkl'), 'wb'))
     return records

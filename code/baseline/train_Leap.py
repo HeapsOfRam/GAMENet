@@ -14,7 +14,7 @@ from collections import defaultdict
 import sys
 sys.path.append("..")
 from models import Leap
-from util import llprint, sequence_metric, sequence_output_process, ddi_rate_score, get_n_params
+from util import llprint, sequence_metric, sequence_output_process, ddi_rate_score, get_n_params, get_pkl_path, should_test
 
 torch.manual_seed(1203)
 
@@ -78,8 +78,8 @@ def main():
 
     #data_path = '../../data/records_final.pkl'
     #voc_path = '../../data/voc_final.pkl'
-    data_path = '../data/records_final.pkl'
-    voc_path = '../data/voc_final.pkl'
+    data_path = get_pkl_path("records_final.pkl")
+    voc_path = get_pkl_path('voc_final.pkl')
 
     device = torch.device('cuda:0')
 
@@ -100,8 +100,9 @@ def main():
     #TEST = False
     #should_test = os.getenv("TEST_MODEL")
     #TEST = should_test.lower() == "true"
-    should_test = sys.argv[1].strip()
-    TEST = should_test.lower() == "true"
+    #should_test = sys.argv[1].strip()
+    #TEST = should_test.lower() == "true"
+    TEST = should_test(sys.argv[1])
     END_TOKEN = voc_size[2] + 1
 
     model = Leap(voc_size, device=device)
@@ -163,8 +164,8 @@ def main():
 def fine_tune(fine_tune_name=''):
     #data_path = '../../data/records_final.pkl'
     #voc_path = '../../data/voc_final.pkl'
-    data_path = '../data/records_final.pkl'
-    voc_path = '../data/voc_final.pkl'
+    data_path = get_pkl_path('records_final.pkl')
+    voc_path = get_pkl_path('voc_final.pkl')
 
     device = torch.device('cuda:0')
 
@@ -172,7 +173,7 @@ def fine_tune(fine_tune_name=''):
     voc = dill.load(open(voc_path, 'rb'))
     diag_voc, pro_voc, med_voc = voc['diag_voc'], voc['pro_voc'], voc['med_voc']
     #ddi_A = dill.load(open('../../data/ddi_A_final.pkl', 'rb'))
-    ddi_A = dill.load(open('../data/ddi_A_final.pkl', 'rb'))
+    ddi_A = dill.load(open(get_pkl_path('ddi_A_final.pkl'), 'rb'))
 
     split_point = int(len(data) * 2 / 3)
     data_train = data[:split_point]

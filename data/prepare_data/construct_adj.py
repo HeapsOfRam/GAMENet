@@ -2,18 +2,27 @@ import pandas as pd
 import numpy as np
 from collections import defaultdict
 import dill
+from util import get_pkl_path
 
 # atc -> cid
 #ddi_file = 'drug-DDI.csv'
 #cid_atc = 'drug-atc.csv'
 #voc_file = 'voc_final.pkl'
 #data_path = 'records_final.pkl'
-data_path_prefix = "../data/prepare_data/data/"
-pkl_path_prefix = "../data/"
+#data_path_prefix = "../data/prepare_data/data/"
+#pkl_path_prefix = "../data/"
+#ddi_file = '{}drug-DDI.csv'.format(data_path_prefix)
+#cid_atc = '{}drug-atc.csv'.format(data_path_prefix)
+#voc_file = '{}voc_final.pkl'.format(pkl_path_prefix)
+#data_path = '{}records_final.pkl'.format(pkl_path_prefix)
+
+data_path_prefix = "./data/"
+
 ddi_file = '{}drug-DDI.csv'.format(data_path_prefix)
 cid_atc = '{}drug-atc.csv'.format(data_path_prefix)
-voc_file = '{}voc_final.pkl'.format(pkl_path_prefix)
-data_path = '{}records_final.pkl'.format(pkl_path_prefix)
+voc_file = get_pkl_path('voc_final.pkl')
+data_path = get_pkl_path('records_final.pkl')
+
 
 TOPK = 40 # topk drug-drug interaction
 
@@ -56,7 +65,9 @@ for patient in records:
                 ehr_adj[med_i, med_j] = 1
                 ehr_adj[med_j, med_i] = 1
 #dill.dump(ehr_adj, open('ehr_adj_final.pkl', 'wb'))
-dill.dump(ehr_adj, open('../data/ehr_adj_final.pkl', 'wb'))
+#dill.dump(ehr_adj, open('../data/ehr_adj_final.pkl', 'wb'))
+dill.dump(ehr_adj, open(get_pkl_path('ehr_adj_final.pkl'), 'wb'))
+
 
 
 # ddi adj
@@ -79,5 +90,6 @@ for index, row in ddi_df.iterrows():
 
 
 #dill.dump(ddi_adj, open('ddi_A_final.pkl', 'wb'))
-dill.dump(ddi_adj, open('../data/ddi_A_final.pkl', 'wb'))
+#dill.dump(ddi_adj, open('../data/ddi_A_final.pkl', 'wb'))
+dill.dump(ddi_adj, open(get_pkl_path('ddi_A_final.pkl'), 'wb'))
 print('complete!')

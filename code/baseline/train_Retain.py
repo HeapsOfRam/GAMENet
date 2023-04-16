@@ -13,7 +13,7 @@ from collections import defaultdict
 import sys
 sys.path.append("..")
 from models import Retain
-from util import llprint, multi_label_metric, ddi_rate_score, get_n_params
+from util import llprint, multi_label_metric, ddi_rate_score, get_n_params, get_pkl_path, should_test
 
 torch.manual_seed(1203)
 model_name = 'Retain'
@@ -85,8 +85,11 @@ def main():
     if not os.path.exists(os.path.join("saved", model_name)):
         os.makedirs(os.path.join("saved", model_name))
 
-    data_path = '../data/records_final.pkl'
-    voc_path = '../data/voc_final.pkl'
+    #data_path = '../data/records_final.pkl'
+    #voc_path = '../data/voc_final.pkl'
+    data_path = get_pkl_path('records_final.pkl')
+    voc_path = get_pkl_path('voc_final.pkl')
+
     device = torch.device('cuda:0')
 
     data = dill.load(open(data_path, 'rb'))
@@ -105,8 +108,10 @@ def main():
     #TEST = False
     #should_test = os.getenv("MODEL_TEST").strip()
     #TEST = should_test.lower() == "true"
-    should_test = sys.argv[1].strip()
-    TEST = should_test.lower() == "true"
+
+    #should_test = sys.argv[1].strip()
+    #TEST = should_test.lower() == "true"
+    TEST = should_test(sys.argv[1])
 
     model = Retain(voc_size, device=device)
     if TEST:

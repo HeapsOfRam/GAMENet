@@ -4,7 +4,8 @@ import pandas as pd
 #med_file = 'PRESCRIPTIONS.csv'
 #diag_file = 'DIAGNOSES_ICD.csv'
 #procedure_file = 'PROCEDURES_ICD.csv'
-path_prefix = "../data/prepare_data/data/"
+#path_prefix = "../data/prepare_data/data/"
+path_prefix = "./data/"
 med_file = '{}PRESCRIPTIONS.csv'.format(path_prefix)
 diag_file = '{}DIAGNOSES_ICD.csv'.format(path_prefix)
 procedure_file = '{}PROCEDURES_ICD.csv'.format(path_prefix)
