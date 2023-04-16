@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from sklearn.metrics import jaccard_similarity_score, roc_auc_score, precision_score, f1_score, average_precision_score
+from sklearn.metrics import jaccard_score, roc_auc_score, precision_score, f1_score, average_precision_score
 import numpy as np
 import dill
 import time
@@ -19,7 +19,8 @@ from util import llprint, sequence_metric, sequence_output_process, ddi_rate_sco
 torch.manual_seed(1203)
 
 model_name = 'Leap'
-resume_name = ''
+#resume_name = ''
+resume_name = 'final.model'
 
 def eval(model, data_eval, voc_size, epoch):
     # evaluate
@@ -75,8 +76,11 @@ def main():
     if not os.path.exists(os.path.join("saved", model_name)):
         os.makedirs(os.path.join("saved", model_name))
 
-    data_path = '../../data/records_final.pkl'
-    voc_path = '../../data/voc_final.pkl'
+    #data_path = '../../data/records_final.pkl'
+    #voc_path = '../../data/voc_final.pkl'
+    data_path = '../data/records_final.pkl'
+    voc_path = '../data/voc_final.pkl'
+
     device = torch.device('cuda:0')
 
     data = dill.load(open(data_path, 'rb'))
@@ -93,7 +97,11 @@ def main():
 
     EPOCH = 30
     LR = 0.0002
-    TEST = False
+    #TEST = False
+    #should_test = os.getenv("TEST_MODEL")
+    #TEST = should_test.lower() == "true"
+    should_test = sys.argv[1].strip()
+    TEST = should_test.lower() == "true"
     END_TOKEN = voc_size[2] + 1
 
     model = Leap(voc_size, device=device)
@@ -153,14 +161,18 @@ def main():
             os.path.join('saved', model_name, 'final.model'), 'wb'))
 
 def fine_tune(fine_tune_name=''):
-    data_path = '../../data/records_final.pkl'
-    voc_path = '../../data/voc_final.pkl'
+    #data_path = '../../data/records_final.pkl'
+    #voc_path = '../../data/voc_final.pkl'
+    data_path = '../data/records_final.pkl'
+    voc_path = '../data/voc_final.pkl'
+
     device = torch.device('cuda:0')
 
     data = dill.load(open(data_path, 'rb'))
     voc = dill.load(open(voc_path, 'rb'))
     diag_voc, pro_voc, med_voc = voc['diag_voc'], voc['pro_voc'], voc['med_voc']
-    ddi_A = dill.load(open('../../data/ddi_A_final.pkl', 'rb'))
+    #ddi_A = dill.load(open('../../data/ddi_A_final.pkl', 'rb'))
+    ddi_A = dill.load(open('../data/ddi_A_final.pkl', 'rb'))
 
     split_point = int(len(data) * 2 / 3)
     data_train = data[:split_point]
@@ -239,5 +251,5 @@ def fine_tune(fine_tune_name=''):
 
 
 if __name__ == '__main__':
-    # main()
-    fine_tune(fine_tune_name='Epoch_26_JA_0.4465_DDI_0.0723.model')
+    main()
+    #fine_tune(fine_tune_name='Epoch_26_JA_0.4465_DDI_0.0723.model')

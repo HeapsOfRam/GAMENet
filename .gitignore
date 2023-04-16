@@ -108,3 +108,4 @@ data/prepare_data/data/
 data/prepare_data/drug-DDI.csv
 error.txt
 sample_run.txt
+run_output.txt

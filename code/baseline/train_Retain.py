@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from sklearn.metrics import jaccard_similarity_score, roc_auc_score, precision_score, f1_score, average_precision_score
+from sklearn.metrics import jaccard_score, roc_auc_score, precision_score, f1_score, average_precision_score
 import numpy as np
 import dill
 import time
@@ -17,7 +17,8 @@ from util import llprint, multi_label_metric, ddi_rate_score, get_n_params
 
 torch.manual_seed(1203)
 model_name = 'Retain'
-resume_name = ''
+#resume_name = ''
+resume_name = 'final.model'
 
 def eval(model, data_eval, voc_size, epoch):
     # evaluate
@@ -101,7 +102,11 @@ def main():
 
     EPOCH = 40
     LR = 0.0002
-    TEST = False
+    #TEST = False
+    #should_test = os.getenv("MODEL_TEST").strip()
+    #TEST = should_test.lower() == "true"
+    should_test = sys.argv[1].strip()
+    TEST = should_test.lower() == "true"
 
     model = Retain(voc_size, device=device)
     if TEST:

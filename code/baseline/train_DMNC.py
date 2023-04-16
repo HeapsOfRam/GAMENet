@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from sklearn.metrics import jaccard_similarity_score, roc_auc_score, precision_score, f1_score, average_precision_score
+from sklearn.metrics import jaccard_score, roc_auc_score, precision_score, f1_score, average_precision_score
 import numpy as np
 import dill
 import time
@@ -12,12 +12,14 @@ import torch.nn.functional as F
 
 import sys
 sys.path.append("..")
+print(sys.path)
 from models import DMNC
 from util import llprint, sequence_metric, ddi_rate_score, get_n_params
 
 torch.manual_seed(1203)
 model_name = 'DMNC'
-resume_name = ''
+#resume_name = ''
+resume_name = 'final.model'
 
 '''
 It's better to refer to the offical implement in tensorflow.  https://github.com/thaihungle/DMNC
@@ -110,7 +112,11 @@ def main():
 
     EPOCH = 30
     LR = 0.0005
-    TEST = False
+    #TEST = False
+    #should_test = os.getenv("TEST_MODEL").strip()
+    #TEST = should_test.lower() == "true"
+    should_test = sys.argv[1].lower()
+    TEST = should_test.lower() == "true"
     END_TOKEN = voc_size[2] + 1
 
     model = DMNC(voc_size, device=device)
@@ -170,8 +176,10 @@ def main():
         dill.dump(history, open(os.path.join('saved', model_name, 'history.pkl'), 'wb'))
 
         # test
-        torch.save(model.state_dict(), open(
-            os.path.join('saved', model_name, 'final.model'), 'wb'))
+        print("writing model...?")
+        #torch.save(model.state_dict(), open(os.path.join('saved', model_name, 'final.model'), 'wb'))
+        torch.save(model.state_dict(), open(os.path.join('saved', model_name, 'final.model'), 'wb'))
+
 
 
 if __name__ == '__main__':

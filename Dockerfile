@@ -26,12 +26,22 @@ RUN /opt/conda/bin/conda create -y -n myenv python=3.7
 ENV PATH=/opt/conda/envs/myenv/bin:$PATH
 ###
 
-
+# copy files
 COPY . /app
+# copy files to the code directory for unpickling
 COPY data/prepare_data/read_functions.py /app/code/
 COPY data/prepare_data/create_vocabulary.py /app/code/
 COPY data/prepare_data/construct_adj.py /app/code/
 COPY data/prepare_data/prepare_data.py /app/code/
+# copy modules to baseline directory for imports
+COPY code/util.py /app/code/baseline/
+COPY code/models.py /app/code/baseline/
+COPY code/layers.py /app/code/baseline/
+# copy files to baseline directory for unpickling
+COPY data/prepare_data/read_functions.py /app/code/baseline/
+COPY data/prepare_data/create_vocabulary.py /app/code/baseline/
+COPY data/prepare_data/construct_adj.py /app/code/baseline/
+COPY data/prepare_data/prepare_data.py /app/code/baseline/
 
 WORKDIR /app/code/
 
