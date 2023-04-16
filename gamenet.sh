@@ -18,6 +18,8 @@ should_train_gn=true
 should_eval_gn=true
 
 prepare_data() {
+    echo "deleting old pkl files..."
+    rm data/pkl/*.pkl
     echo "PREPARING DATA..."
     python prepare_data.py
     echo "CONSTRUCTING ADJACENCY MATRICES"

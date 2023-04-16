@@ -30,7 +30,7 @@ def should_test(arg):
 # get path to pickle file with prefix
 def get_pkl_path(filename):
     #return "../data/{}".format(filename)
-    return "./data/{}".format(filename)
+    return "./data/pkl/{}".format(filename)
 
 def transform_split(X, Y):
     x_train, x_eval, y_train, y_eval = train_test_split(X, Y, train_size=2/3, random_state=1203)

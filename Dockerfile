@@ -26,54 +26,22 @@ RUN /opt/conda/bin/conda create -y -n myenv python=3.7
 ENV PATH=/opt/conda/envs/myenv/bin:$PATH
 ###
 
-## copy files
-#COPY . /app
-## copy files to the code directory for unpickling
-#COPY data/prepare_data/read_functions.py /app/code/
-#COPY data/prepare_data/create_vocabulary.py /app/code/
-#COPY data/prepare_data/construct_adj.py /app/code/
-#COPY data/prepare_data/prepare_data.py /app/code/
-## copy modules to baseline directory for imports
-#COPY code/util.py /app/code/baseline/
-#COPY code/models.py /app/code/baseline/
-#COPY code/layers.py /app/code/baseline/
-## copy files to baseline directory for unpickling
-#COPY data/prepare_data/read_functions.py /app/code/baseline/
-#COPY data/prepare_data/create_vocabulary.py /app/code/baseline/
-#COPY data/prepare_data/construct_adj.py /app/code/baseline/
-#COPY data/prepare_data/prepare_data.py /app/code/baseline/
-#WORKDIR /app/code/
-
 # copy main shell script and requirements
 COPY gamenet.sh /app/
 COPY requirements.txt /app/
-# copy python files from code directory
-COPY code/layers.py /app/
-COPY code/models.py /app/
-COPY code/util.py /app/
-COPY code/train_GAMENet.py /app/
-# copy baselines
-COPY code/baseline/baseline_near.py /app/
-COPY code/baseline/train_DMNC.py /app/
-COPY code/baseline/train_Leap.py /app/
-COPY code/baseline/train_LR.py /app/
-COPY code/baseline/train_Retain.py /app/
-# copy data
-COPY data/prepare_data/data/ /app/data/
+# copy data and pkl files
+COPY data/data/ /app/data/
+COPY data/pkl/ /app/data/pkl/
 # copy data prep code
-COPY data/prepare_data/read_functions.py /app/
-COPY data/prepare_data/create_vocabulary.py /app/
-COPY data/prepare_data/prepare_data.py /app/
-COPY data/prepare_data/construct_adj.py /app/
+COPY data/*.py /app/
+# copy python files from code directory
+COPY code/*.py /app/
+# copy baseline code
+COPY code/baseline/*.py /app/
 
 WORKDIR /app/
-
 
 RUN pip install --upgrade pip
 RUN pip install -r /app/requirements.txt
 
-#CMD ["python", "train_GAMENet.py", "--model_name", "GAMENet", "--ddi"]
-#CMD ["sh", "../gamenet.sh"]
 CMD ["sh", "gamenet.sh"]
-#CMD ["python", "/app/code/train_GAMENet.py", "--model_name", "GAMENet", "--ddi"]
-#CMD ["python", "/app/code/train_GAMENET.py", "--model_name", "GAMENet", "--ddi", "--resume_path", "/app/code/saved/GAMENet/Epoch_39_JA_0.5175_DDI_0.0782.model", "--eval"]
