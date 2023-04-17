@@ -1,4 +1,4 @@
-from sklearn.metrics import jaccard_similarity_score, roc_auc_score, precision_score, f1_score, average_precision_score
+from sklearn.metrics import jaccard_score, roc_auc_score, precision_score, f1_score, average_precision_score
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -6,6 +6,7 @@ import sys
 import warnings
 import dill
 from collections import Counter
+import os
 warnings.filterwarnings('ignore')
 
 def get_n_params(model):
@@ -21,6 +22,15 @@ def get_n_params(model):
 def llprint(message):
     sys.stdout.write(message)
     sys.stdout.flush()
+
+# get whether we should test or not
+def should_test(arg):
+    return arg.strip().lower() == "true"
+
+# get path to pickle file with prefix
+def get_pkl_path(filename):
+    #return "../data/{}".format(filename)
+    return "./data/pkl/{}".format(filename)
 
 def transform_split(X, Y):
     x_train, x_eval, y_train, y_eval = train_test_split(X, Y, train_size=2/3, random_state=1203)
@@ -221,7 +231,8 @@ def multi_label_metric(y_gt, y_pred, y_prob):
 
     return ja, prauc, np.mean(avg_prc), np.mean(avg_recall), np.mean(avg_f1)
 
-def ddi_rate_score(record, path='../data/ddi_A_final.pkl'):
+#def ddi_rate_score(record, path='../data/ddi_A_final.pkl'):
+def ddi_rate_score(record, path=get_pkl_path('ddi_A_final.pkl')):
     # ddi rate
     ddi_A = dill.load(open(path, 'rb'))
     all_cnt = 0

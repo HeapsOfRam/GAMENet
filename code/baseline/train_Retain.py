@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from sklearn.metrics import jaccard_similarity_score, roc_auc_score, precision_score, f1_score, average_precision_score
+from sklearn.metrics import jaccard_score, roc_auc_score, precision_score, f1_score, average_precision_score
 import numpy as np
 import dill
 import time
@@ -13,11 +13,11 @@ from collections import defaultdict
 import sys
 sys.path.append("..")
 from models import Retain
-from util import llprint, multi_label_metric, ddi_rate_score, get_n_params
+from util import llprint, multi_label_metric, ddi_rate_score, get_n_params, get_pkl_path, should_test
 
 torch.manual_seed(1203)
 model_name = 'Retain'
-resume_name = ''
+resume_name = 'final.model'
 
 def eval(model, data_eval, voc_size, epoch):
     # evaluate
@@ -84,8 +84,9 @@ def main():
     if not os.path.exists(os.path.join("saved", model_name)):
         os.makedirs(os.path.join("saved", model_name))
 
-    data_path = '../data/records_final.pkl'
-    voc_path = '../data/voc_final.pkl'
+    data_path = get_pkl_path('records_final.pkl')
+    voc_path = get_pkl_path('voc_final.pkl')
+
     device = torch.device('cuda:0')
 
     data = dill.load(open(data_path, 'rb'))
@@ -101,7 +102,7 @@ def main():
 
     EPOCH = 40
     LR = 0.0002
-    TEST = False
+    TEST = should_test(sys.argv[1])
 
     model = Retain(voc_size, device=device)
     if TEST:

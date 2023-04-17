@@ -10,7 +10,7 @@ import torch.nn.functional as F
 from collections import defaultdict
 
 from models import GAMENet
-from util import llprint, multi_label_metric, ddi_rate_score, get_n_params
+from util import llprint, multi_label_metric, ddi_rate_score, get_n_params, get_pkl_path
 
 torch.manual_seed(1203)
 np.random.seed(1203)
@@ -80,7 +80,8 @@ def eval(model, data_eval, voc_size, epoch):
     llprint('\tDDI Rate: %.4f, Jaccard: %.4f,  PRAUC: %.4f, AVG_PRC: %.4f, AVG_RECALL: %.4f, AVG_F1: %.4f\n' % (
         ddi_rate, np.mean(ja), np.mean(prauc), np.mean(avg_p), np.mean(avg_r), np.mean(avg_f1)
     ))
-    dill.dump(obj=smm_record, file=open('../data/gamenet_records.pkl', 'wb'))
+    #dill.dump(obj=smm_record, file=open('../data/gamenet_records.pkl', 'wb'))
+    dill.dump(obj=smm_record, file=open(get_pkl_path('gamenet_records.pkl'), 'wb'))
     dill.dump(case_study, open(os.path.join('saved', model_name, 'case_study.pkl'), 'wb'))
 
     # print('avg med', med_cnt / visit_cnt)
@@ -92,11 +93,26 @@ def main():
     if not os.path.exists(os.path.join("saved", model_name)):
         os.makedirs(os.path.join("saved", model_name))
 
-    data_path = '../data/records_final.pkl'
-    voc_path = '../data/voc_final.pkl'
+    #data_path = '../data/records_final.pkl'
+    #voc_path = '../data/voc_final.pkl'
 
-    ehr_adj_path = '../data/ehr_adj_final.pkl'
-    ddi_adj_path = '../data/ddi_A_final.pkl'
+    #ehr_adj_path = '../data/ehr_adj_final.pkl'
+    #ddi_adj_path = '../data/ddi_A_final.pkl'
+
+    #path_prefix = "../data/"
+
+    #data_path = '{}records_final.pkl'.format(path_prefix)
+    #voc_path = '{}voc_final.pkl'.format(path_prefix)
+
+    #ehr_adj_path = '{}ehr_adj_final.pkl'.format(path_prefix)
+    #ddi_adj_path = '{}ddi_A_final.pkl'.format(path_prefix)
+
+    data_path = get_pkl_path('records_final.pkl')
+    voc_path = get_pkl_path('voc_final.pkl')
+
+    ehr_adj_path = get_pkl_path('ehr_adj_final.pkl')
+    ddi_adj_path = get_pkl_path('ddi_A_final.pkl')
+
     device = torch.device('cuda:0')
 
     ehr_adj = dill.load(open(ehr_adj_path, 'rb'))
