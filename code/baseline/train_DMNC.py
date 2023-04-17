@@ -18,7 +18,6 @@ from util import llprint, sequence_metric, ddi_rate_score, get_n_params, get_pkl
 
 torch.manual_seed(1203)
 model_name = 'DMNC'
-#resume_name = ''
 resume_name = 'final.model'
 
 '''
@@ -95,8 +94,6 @@ def main():
     if not os.path.exists(os.path.join("saved", model_name)):
         os.makedirs(os.path.join("saved", model_name))
 
-    #data_path = '../data/records_final.pkl'
-    #voc_path = '../data/voc_final.pkl'
     data_path = get_pkl_path("records_final.pkl")
     voc_path = get_pkl_path("voc_final.pkl")
     device = torch.device('cuda:0')
@@ -114,12 +111,7 @@ def main():
 
     EPOCH = 30
     LR = 0.0005
-    #TEST = False
-    #should_test = os.getenv("TEST_MODEL").strip()
-    #TEST = should_test.lower() == "true"
 
-    #should_test = sys.argv[1].lower()
-    #TEST = should_test.lower() == "true"
     TEST = should_test(sys.argv[1])
     END_TOKEN = voc_size[2] + 1
 
@@ -181,7 +173,6 @@ def main():
 
         # test
         print("writing model...?")
-        #torch.save(model.state_dict(), open(os.path.join('saved', model_name, 'final.model'), 'wb'))
         torch.save(model.state_dict(), open(os.path.join('saved', model_name, 'final.model'), 'wb'))
 
 

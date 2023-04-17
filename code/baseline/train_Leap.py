@@ -19,7 +19,6 @@ from util import llprint, sequence_metric, sequence_output_process, ddi_rate_sco
 torch.manual_seed(1203)
 
 model_name = 'Leap'
-#resume_name = ''
 resume_name = 'final.model'
 
 def eval(model, data_eval, voc_size, epoch):
@@ -76,8 +75,6 @@ def main():
     if not os.path.exists(os.path.join("saved", model_name)):
         os.makedirs(os.path.join("saved", model_name))
 
-    #data_path = '../../data/records_final.pkl'
-    #voc_path = '../../data/voc_final.pkl'
     data_path = get_pkl_path("records_final.pkl")
     voc_path = get_pkl_path('voc_final.pkl')
 
@@ -97,11 +94,6 @@ def main():
 
     EPOCH = 30
     LR = 0.0002
-    #TEST = False
-    #should_test = os.getenv("TEST_MODEL")
-    #TEST = should_test.lower() == "true"
-    #should_test = sys.argv[1].strip()
-    #TEST = should_test.lower() == "true"
     TEST = should_test(sys.argv[1])
     END_TOKEN = voc_size[2] + 1
 
@@ -162,8 +154,6 @@ def main():
             os.path.join('saved', model_name, 'final.model'), 'wb'))
 
 def fine_tune(fine_tune_name=''):
-    #data_path = '../../data/records_final.pkl'
-    #voc_path = '../../data/voc_final.pkl'
     data_path = get_pkl_path('records_final.pkl')
     voc_path = get_pkl_path('voc_final.pkl')
 
@@ -172,7 +162,6 @@ def fine_tune(fine_tune_name=''):
     data = dill.load(open(data_path, 'rb'))
     voc = dill.load(open(voc_path, 'rb'))
     diag_voc, pro_voc, med_voc = voc['diag_voc'], voc['pro_voc'], voc['med_voc']
-    #ddi_A = dill.load(open('../../data/ddi_A_final.pkl', 'rb'))
     ddi_A = dill.load(open(get_pkl_path('ddi_A_final.pkl'), 'rb'))
 
     split_point = int(len(data) * 2 / 3)

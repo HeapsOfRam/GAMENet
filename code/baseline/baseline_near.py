@@ -5,16 +5,10 @@ import sys
 sys.path.append("..")
 from util import multi_label_metric, get_pkl_path
 
-#data_path = '../../data/records_final.pkl'
-#voc_path = '../../data/voc_final.pkl'
-
-#ddi_adj_path = '../../data/ddi_A_final.pkl'
-
 data_path = get_pkl_path('records_final.pkl')
 voc_path = get_pkl_path('voc_final.pkl')
 
 ddi_adj_path = get_pkl_path('ddi_A_final.pkl')
-
 
 data = dill.load(open(data_path, 'rb'))
 voc = dill.load(open(voc_path, 'rb'))
@@ -24,7 +18,6 @@ data_train = data[:split_point]
 eval_len = int(len(data[split_point:]) / 2)
 data_test = data[split_point:split_point + eval_len]
 data_eval = data[split_point+eval_len:]
-
 
 def main():
     gt = []

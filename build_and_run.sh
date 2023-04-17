@@ -3,5 +3,8 @@
 VERS=$1
 IMAGE=ryangamenet
 
-podman build -t $IMAGE:$VERS .
-podman run --privileged --gpus all -it --rm $IMAGE:$VERS
+# comment this out to use docker instead of podman
+alias docker=podman
+
+docker build -t $IMAGE:$VERS .
+docker run --privileged --gpus all -it --rm $IMAGE:$VERS

@@ -17,7 +17,6 @@ from util import llprint, multi_label_metric, ddi_rate_score, get_n_params, get_
 
 torch.manual_seed(1203)
 model_name = 'Retain'
-#resume_name = ''
 resume_name = 'final.model'
 
 def eval(model, data_eval, voc_size, epoch):
@@ -85,8 +84,6 @@ def main():
     if not os.path.exists(os.path.join("saved", model_name)):
         os.makedirs(os.path.join("saved", model_name))
 
-    #data_path = '../data/records_final.pkl'
-    #voc_path = '../data/voc_final.pkl'
     data_path = get_pkl_path('records_final.pkl')
     voc_path = get_pkl_path('voc_final.pkl')
 
@@ -105,12 +102,6 @@ def main():
 
     EPOCH = 40
     LR = 0.0002
-    #TEST = False
-    #should_test = os.getenv("MODEL_TEST").strip()
-    #TEST = should_test.lower() == "true"
-
-    #should_test = sys.argv[1].strip()
-    #TEST = should_test.lower() == "true"
     TEST = should_test(sys.argv[1])
 
     model = Retain(voc_size, device=device)
