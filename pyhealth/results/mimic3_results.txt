@@ -1,0 +1,6 @@
+---RESULTS---
+---baseline---
+{'jaccard_samples': 0.40013170979983465, 'accuracy': 0.0, 'hamming_loss': 0.11400424293543947, 'precision_samples': 0.7095104693228708, 'recall_samples': 0.5047431983545307, 'pr_auc_samples': 0.7073934358102453, 'f1_samples': 0.5610993602080525, 'loss': 0.28359200125155243}
+---gamenet---
+{'jaccard_samples': 0.3325893316101536, 'accuracy': 0.0, 'hamming_loss': 0.12233310329466493, 'precision_samples': 0.7297261834026539, 'recall_samples': 0.40144427750923667, 'pr_auc_samples': 0.675006884992852, 'f1_samples': 0.49133371456894476, 'loss': 0.28831865994826605}
+
