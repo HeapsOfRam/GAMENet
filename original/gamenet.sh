@@ -8,9 +8,9 @@ should_prep_data=true
 # set flags to determine whether to run the various baselines
 run_near=true
 run_dmnc=false
-run_leap=false
+run_leap=true
 run_lr=true
-run_retain=false
+run_retain=true
 skip_baselines=false
 
 # set flags to determine whether to run gamenet

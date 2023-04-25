@@ -98,7 +98,7 @@ venv.bak/
 .ropeproject
 
 # mkdocs documentation
-/site
+site
 
 # mypy
 .mypy_cache/
@@ -106,10 +106,17 @@ venv.bak/
 # ryan's updates
 #data/prepare_data/data/
 #data/prepare_data/drug-DDI.csv
-data/data/DIAGNOSES_ICD.csv
-data/data/PRESCRIPTIONS.csv
-data/data/PROCEDURES_ICD.csv
-data/data/drug-DDI.csv
+DIAGNOSES_ICD.csv
+PRESCRIPTIONS.csv
+PROCEDURES_ICD.csv
+drug-DDI.csv
 error.txt
 sample_run.txt
 run_output.txt
+
+hiddendata/
+output/
+runlogs/
+ignore/
+bak/
+bakout/

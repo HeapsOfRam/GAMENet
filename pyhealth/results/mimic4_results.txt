@@ -1,0 +1,13 @@
+## run 1 ; 50 epochs, default hyperparams
+---RESULTS---
+---baseline---
+{'jaccard_samples': 0.4431866668847664, 'accuracy': 0.0023189196562542628, 'hamming_loss': 0.08037546037375529, 'precision_samples': 0.764786835892487, 'recall_samples': 0.5292582798532505, 'pr_auc_samples': 0.7491539984038452, 'f1_samples': 0.593410741969134, 'loss': 0.1946367337003998}
+---gamenet---
+{'jaccard_samples': 0.4406486400139214, 'accuracy': 0.001841495021143091, 'hamming_loss': 0.08442913654344564, 'precision_samples': 0.7413299839167592, 'recall_samples': 0.540694633333197, 'pr_auc_samples': 0.7340730297759832, 'f1_samples': 0.5901423315317839, 'loss': 0.22150646104760793}
+## run 2 ; 20 epochs; lr 0.001, decay weight 0.00001
+---RESULTS---
+---baseline---
+{'jaccard_samples': 0.44647128854346, 'accuracy': 0.0021041200027149937, 'hamming_loss': 0.07835064141722664, 'precision_samples': 0.7722301774571527, 'recall_samples': 0.5282143463104728, 'pr_auc_samples': 0.7526173369084912, 'f1_samples': 0.5977013267600257, 'loss': 0.1901559585229659}
+---gamenet---
+{'jaccard_samples': 0.4528936538899606, 'accuracy': 0.0018326206475259622, 'hamming_loss': 0.08147593836964637, 'precision_samples': 0.7287819254055744, 'recall_samples': 0.563732555251509, 'pr_auc_samples': 0.741092196459582, 'f1_samples': 0.6043089450064318, 'loss': 0.19863425537105248}
+
