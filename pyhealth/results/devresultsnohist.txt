@@ -1,0 +1,19 @@
+---GAMENET EVALUATION---
+--eval on drug_recommendation data--
+Evaluation: 100%|█████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 46.98it/s]
+{'jaccard_samples': 0.23657496295399236, 'accuracy': 0.0, 'hamming_loss': 0.1357142857142857, 'precision_samples': 0.6643618726952059, 'recall_samples': 0.2937208709706145, 'pr_auc_samples': 0.4652944073620124, 'f1_samples': 0.3758606824801897, 'loss': 0.54477858543396}
+--eval on no_hist data--
+Evaluation: 100%|████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 179.30it/s]
+{'jaccard_samples': 0.2854845825368662, 'accuracy': 0.0, 'hamming_loss': 0.12961065573770492, 'precision_samples': 0.7201482033449247, 'recall_samples': 0.33670828302852746, 'pr_auc_samples': 0.5146846855163228, 'f1_samples': 0.434603235631335, 'loss': 0.6027413010597229}
+---RESULTS---
+---baseline---
+--result for task drug_recommendation--
+{'jaccard_samples': 0.12336879058359439, 'accuracy': 0.0, 'hamming_loss': 0.46517857142857144, 'precision_samples': 0.15258038459055429, 'recall_samples': 0.44720577381720167, 'pr_auc_samples': 0.17431417766013999, 'f1_samples': 0.21315684027912665, 'loss': 0.6929380297660828}
+--result for task no_hist--
+{'jaccard_samples': 0.13666896025516256, 'accuracy': 0.0, 'hamming_loss': 0.44846311475409834, 'precision_samples': 0.17032060299808982, 'recall_samples': 0.4771684994799806, 'pr_auc_samples': 0.20161381603727718, 'f1_samples': 0.23149055699990614, 'loss': 0.6947680711746216}
+---gamenet---
+--result for task drug_recommendation--
+{'jaccard_samples': 0.23657496295399236, 'accuracy': 0.0, 'hamming_loss': 0.1357142857142857, 'precision_samples': 0.6643618726952059, 'recall_samples': 0.2937208709706145, 'pr_auc_samples': 0.4652944073620124, 'f1_samples': 0.3758606824801897, 'loss': 0.54477858543396}
+--result for task no_hist--
+{'jaccard_samples': 0.2854845825368662, 'accuracy': 0.0, 'hamming_loss': 0.12961065573770492, 'precision_samples': 0.7201482033449247, 'recall_samples': 0.33670828302852746, 'pr_auc_samples': 0.5146846855163228, 'f1_samples': 0.434603235631335, 'loss': 0.6027413010597229}
+
