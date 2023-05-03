@@ -6,88 +6,17 @@ import sys
 from mimic import *
 from mimic import _DEV, _DRUG_REC_TN, _NO_HIST_TN, _ALL_TASKS
 
+from model import ModelWrapper
+from model import _DEVICE, _EPOCHS, _LR, _DECAY_WEIGHT
+
 # pyhealth imports
 import pyhealth
 from pyhealth.models import RETAIN, GAMENet
 from pyhealth.trainer import Trainer
 
-# set the device to be the cuda gpu
-_DEVICE = "cuda"
-
-# hyperparameters for training
-_EPOCHS = 20
-#_LR = 0.0002
-_LR = 1e-3
-#_DECAY_WEIGHT = 0.85
-_DECAY_WEIGHT = 1e-5
-
 # experiment names
 _GAMENET_EXP = "drug_recommendation_gamenet"
 _RETAIN_EXP = "drug_recommendation_retain"
-
-# metrics to track from training/evaluation
-_METRICS = [
-        "jaccard_samples", "accuracy", "hamming_loss",
-        "precision_samples", "recall_samples",
-        "pr_auc_samples", "f1_samples"
-]
-
-# training step for the retain baseline model
-def train_retain(mimic_sample, train_loader, val_loader, epochs=_EPOCHS, decay_weight=_DECAY_WEIGHT, learning_rate=_LR, experiment=_RETAIN_EXP, device=_DEVICE):
-    model = RETAIN(
-            mimic_sample,
-            feature_keys = ["conditions", "procedures"],
-            label_key = "drugs",
-            mode = "multilabel"
-            )
-
-    trainer = Trainer(
-            model = model,
-            metrics = _METRICS,
-            device = device,
-            exp_name = experiment
-            )
-
-    trainer.train(
-            train_dataloader = train_loader,
-            val_dataloader = val_loader,
-            epochs = epochs,
-            monitor = "accuracy",
-            monitor_criterion = "max",
-            weight_decay = decay_weight,
-            optimizer_params = {"lr": learning_rate}
-            )
-
-    return model, trainer
-
-# training step for the gamenet model
-def train_gamenet(mimic_sample, train_loader, val_loader, epochs=_EPOCHS, decay_weight=_DECAY_WEIGHT, learning_rate=_LR, experiment=_GAMENET_EXP, device=_DEVICE):
-    gamenet = GAMENet(mimic_sample)
-
-    trainer = Trainer(
-        model = gamenet,
-        metrics = _METRICS,
-        device = device,
-        exp_name = experiment
-    )
-
-    trainer.train(
-        train_dataloader = train_loader,
-        val_dataloader = val_loader,
-        epochs = epochs,
-        monitor = "accuracy",
-        monitor_criterion = "max",
-        weight_decay = decay_weight,
-        optimizer_params = {"lr": learning_rate}
-    )
-
-    return gamenet, trainer
-
-# function to evaluate the models
-def evaluate_model(trainer, test_loader):
-    result = trainer.evaluate(test_loader)
-    print(result)
-    return result
 
 def main(args):
     # choose dataset
@@ -133,38 +62,67 @@ def main(args):
         print("---RETAIN TRAINING---")
         for taskname,dataloader in dataloaders.items():
             print("--training retain on {} data--".format(taskname))
-            retain[taskname], rtrainer[taskname] = train_retain(
-                drug_task_data[taskname],
-                dataloader["train"], dataloader["val"],
-                epochs=args.epochs,
-                decay_weight=args.decay,
-                learning_rate=args.rate,
-                experiment="{}_task_{}".format(_RETAIN_EXP, taskname)
-                )
+            retain[taskname] = ModelWrapper(
+                    drug_task_data[taskname],
+                    model=RETAIN,
+                    experiment="{}_task_{}".format(_RETAIN_EXP, taskname)
+            )
+
+            #rtrainer[taskname] = model.train_model(
+            retain[taskname].train_model(
+                    dataloader["train"], dataloader["val"],
+                    decay_weight=args.decay,
+                    learning_rate=args.rate,
+                    epochs=args.epochs
+            )
+            #retain[taskname], rtrainer[taskname] = train_retain(
+            #    drug_task_data[taskname],
+            #    dataloader["train"], dataloader["val"],
+            #    epochs=args.epochs,
+            #    decay_weight=args.decay,
+            #    learning_rate=args.rate,
+            #    experiment="{}_task_{}".format(_RETAIN_EXP, taskname)
+            #    )
         print("---RETAIN EVALUATION---")
         for taskname in mimic.get_task_names():
             print("--eval retain on {} data--".format(taskname))
             test_loader = dataloaders[taskname]["test"]
-            baseline_result[taskname] = evaluate_model(rtrainer[taskname], test_loader)
+            #baseline_result[taskname] = evaluate_model(rtrainer[taskname], test_loader)
+            baseline_result[taskname] = retain[taskname].evaluate_model(test_loader)
+
 
     # gamenet
     if args.gamenet:
         print("---GAMENET TRAINING---")
         for taskname,dataloader in dataloaders.items():
             print("--training gamenet on {} data--".format(taskname))
-            gamenet[taskname], gtrainer[taskname] = train_gamenet(
+            gamenet[taskname] = ModelWrapper(
                 drug_task_data[taskname],
-                dataloader["train"], dataloader["val"],
-                epochs=args.epochs,
-                decay_weight=args.decay,
-                learning_rate=args.rate,
+                model=GAMENet,
                 experiment="{}_task_{}".format(_GAMENET_EXP, taskname)
-                )
+            )
+            #gtrainer[taskname] = model.train_model(
+            gamenet[taskname].train_model(
+                dataloader["train"], dataloader["val"],
+                decay_weight = args.decay,
+                learning_rate = args.rate,
+                epochs=args.epochs
+            )
+            #gamenet[taskname], gtrainer[taskname] = train_gamenet(
+            #    drug_task_data[taskname],
+            #    dataloader["train"], dataloader["val"],
+            #    epochs=args.epochs,
+            #    decay_weight=args.decay,
+            #    learning_rate=args.rate,
+            #    experiment="{}_task_{}".format(_GAMENET_EXP, taskname)
+            #    )
         print("---GAMENET EVALUATION---")
         for taskname in mimic.get_task_names():
             print("--eval gament on {} data--".format(taskname))
             test_loader = dataloaders[taskname]["test"]
-            gamenet_result[taskname] = evaluate_model(gtrainer[taskname], test_loader)
+            #gamenet_result[taskname] = evaluate_model(gtrainer[taskname], test_loader)
+            gamenet_result[taskname] = gamenet[taskname].evaluate_model(test_loader)
+
 
     # print results
     print("---RESULTS---")
