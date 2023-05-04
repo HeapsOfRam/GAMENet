@@ -1,6 +1,8 @@
 # import regular python libraries
 import argparse
 import sys
+#import torch
+import numpy as np
 
 # import utilities and variables from the mimic abstractions
 from mimic import *
@@ -17,6 +19,23 @@ from pyhealth.trainer import Trainer
 # experiment names
 _GAMENET_EXP = "drug_recommendation_gamenet"
 _RETAIN_EXP = "drug_recommendation_retain"
+
+def avg_drugs_per_visit(y_hat):
+    num_drugs = []
+    #num_drugs = 0
+    #num_visits = 0
+    #print(y_hat)
+    #print(y_hat.shape)
+
+    for visit in y_hat:
+        #print(visit)
+        num_drugs.append(np.sum(visit))
+        #print(visit)
+        #num_drugs = num_drugs + np.sum(visit)
+        #num_visits = num_visits + 1
+
+    return (sum(num_drugs) * 1.0) / len(num_drugs)
+    #return (num_drugs * 1.0) / (num_visits)
 
 def main(args):
     # choose dataset
@@ -40,7 +59,6 @@ def main(args):
     # create mimicwrapper object
     # then, load the data and run the desired tasks on it
     # finally, create the dataloaders we need
-    #mimic = MIMICWrapper(datasource=mimic_dataset, tasks=mimic_dataset.all_tasks())
     mimic = MIMICWrapper(datasource=mimic_dataset, tasks=tasks)
     mimicdata = mimic.load_data(args.dev)
     drug_task_data = mimic.drug_task_data()
@@ -50,9 +68,11 @@ def main(args):
     models = {}
 
     retain = {}
-    rtrainer = {}
     gamenet = {}
+    rtrainer = {}
     gtrainer = {}
+    radpv = {}
+    gadpv = {}
 
     baseline_result = {}
     gamenet_result = {}
@@ -68,28 +88,22 @@ def main(args):
                     experiment="{}_task_{}".format(_RETAIN_EXP, taskname)
             )
 
-            #rtrainer[taskname] = model.train_model(
-            retain[taskname].train_model(
+            rtrainer[taskname] = retain[taskname].train_model(
                     dataloader["train"], dataloader["val"],
                     decay_weight=args.decay,
                     learning_rate=args.rate,
                     epochs=args.epochs
             )
-            #retain[taskname], rtrainer[taskname] = train_retain(
-            #    drug_task_data[taskname],
-            #    dataloader["train"], dataloader["val"],
-            #    epochs=args.epochs,
-            #    decay_weight=args.decay,
-            #    learning_rate=args.rate,
-            #    experiment="{}_task_{}".format(_RETAIN_EXP, taskname)
-            #    )
         print("---RETAIN EVALUATION---")
         for taskname in mimic.get_task_names():
             print("--eval retain on {} data--".format(taskname))
             test_loader = dataloaders[taskname]["test"]
-            #baseline_result[taskname] = evaluate_model(rtrainer[taskname], test_loader)
             baseline_result[taskname] = retain[taskname].evaluate_model(test_loader)
-
+            #adpv = avg_drugs_per_visit(retain[taskname].inference(test_loader)[0])
+            #radpv[taskname] = avg_drugs_per_visit(rtrainer[taskname].inference(test_loader)[0])
+            #print("recommended an average of {} drugs / visit".format(radpv[taskname]))
+    else:
+        print("---SKIPPING BASELINE---")
 
     # gamenet
     if args.gamenet:
@@ -101,39 +115,88 @@ def main(args):
                 model=GAMENet,
                 experiment="{}_task_{}".format(_GAMENET_EXP, taskname)
             )
-            #gtrainer[taskname] = model.train_model(
-            gamenet[taskname].train_model(
+            gtrainer[taskname] = gamenet[taskname].train_model(
                 dataloader["train"], dataloader["val"],
                 decay_weight = args.decay,
                 learning_rate = args.rate,
                 epochs=args.epochs
             )
-            #gamenet[taskname], gtrainer[taskname] = train_gamenet(
-            #    drug_task_data[taskname],
-            #    dataloader["train"], dataloader["val"],
-            #    epochs=args.epochs,
-            #    decay_weight=args.decay,
-            #    learning_rate=args.rate,
-            #    experiment="{}_task_{}".format(_GAMENET_EXP, taskname)
-            #    )
         print("---GAMENET EVALUATION---")
         for taskname in mimic.get_task_names():
             print("--eval gament on {} data--".format(taskname))
             test_loader = dataloaders[taskname]["test"]
-            #gamenet_result[taskname] = evaluate_model(gtrainer[taskname], test_loader)
             gamenet_result[taskname] = gamenet[taskname].evaluate_model(test_loader)
-
+            #gadpv[taskname] = avg_drugs_per_visit(gtrainer[taskname].inference(test_loader)[0])
+            #print("recommended an average of {} drugs / visit".format(gadpv[taskname]))
+    else:
+        print("---SKIPPING GAMENET---")
 
     # print results
     print("---RESULTS---")
-    print("---baseline---")
-    for taskname in mimic.get_task_names():
-        print("--result for task {}--".format(taskname))
-        print(baseline_result[taskname])
-    print("---gamenet---")
-    for taskname in mimic.get_task_names():
-        print("--result for task {}--".format(taskname))
-        print(gamenet_result[taskname])
+    if args.baseline:
+        print("---baseline---")
+        for taskname in mimic.get_task_names():
+            #print("--result for task {}--".format(taskname))
+
+            print("--result for experiment {}--".format(retain[taskname].get_experiment_name()))
+
+            print(baseline_result[taskname])
+
+            test_loader = dataloaders[taskname]["test"]
+
+            ilabels, iresult, iloss = retain[taskname].inference(test_loader)
+            #drug_recs = iresult[iresult >= 0.5]
+            drug_recs = np.where(iresult >= 0.5, 1, 0)
+
+            adpv = avg_drugs_per_visit(drug_recs)
+            print("retain recommended an average of {} drugs / visit".format(adpv))
+
+
+            #adpv = avg_drugs_per_visit(retain[taskname].inference(test_loader)[0])
+            #adpv = avg_drugs_per_visit(rtrainer[taskname].inference(test_loader)[0])
+            #print("recommended an average of {} drugs / visit".format(adpv))
+            #print("retain recommended an average of {} drugs / visit".format(radpv[taskname]))
+    else:
+        print("...BASELINE SKIPPED, NO BASELINE RESULTS...")
+    if args.gamenet:
+        print("---gamenet---")
+        for taskname in mimic.get_task_names():
+            #print("--result for task {}--".format(taskname))
+            print("--result for experiment {}--".format(gamenet[taskname].get_experiment_name()))
+            print(gamenet_result[taskname])
+
+            test_loader = dataloaders[taskname]["test"]
+
+            ilabels, iresult, iloss = gamenet[taskname].inference(test_loader)
+            #drug_recs = iresult[iresult >= 0.5]
+            drug_recs = np.where(iresult >= 0.5, 1, 0)
+
+            #print(drug_recs)
+            #print(drug_recs.shape)
+            #print(iresult.shape)
+
+            adpv = avg_drugs_per_visit(drug_recs)
+            print("gamenet recommended an average of {} drugs / visit".format(adpv))
+
+
+            #adpv = avg_drugs_per_visit(gamenet[taskname].inference(test_loader)[0])
+            #adpv = avg_drugs_per_visit(gtrainer[taskname].inference(test_loader)[0])
+            #print("recommended an average of {} drugs / visit".format(adpv))
+            #print("gamenet recommended an average of {} drugs / visit".format(gadpv[taskname]))
+
+            #print("this should be false:")
+            ##print(gtrainer[taskname] == rtrainer[taskname])
+            #print(np.array_equal(gamenet[taskname].inference(test_loader)[0], retain[taskname].inference(test_loader)[0]))
+            #print(np.array_equal(gamenet[taskname].inference(test_loader)[1], retain[taskname].inference(test_loader)[1]))
+
+            #print(gamenet[taskname].inference(test_loader))
+
+            #print(gamenet[taskname].get_model_type())
+            #print(retain[taskname].get_model_type())
+            #print(gamenet[taskname].get_model())
+            #print(retain[taskname].get_model())
+    else:
+        print("...GAMENET SKIPPED, NO GAMENET RESULTS...")
 
     print("EXECUTION FINISHED...")
 

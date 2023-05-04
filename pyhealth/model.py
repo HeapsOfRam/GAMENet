@@ -22,13 +22,19 @@ _REQUIRED_DL_KEYS = {'train', 'val', 'test'}
 
 _DEFAULT_EXPERIMENT = "drug_recommendation"
 
+_BEST_MODEL_PATH = "output/{}/best.ckpt"
+#_BEST_MODEL_PATH = "output/{}/last.ckpt"
+
 class ModelWrapper():
     def __init__(self, mimic_sample, model=GAMENet, experiment=_DEFAULT_EXPERIMENT, device=_DEVICE, metrics=_METRICS):
         self.model_type = model
+        self.experiment = experiment
 
         if self.model_type == GAMENet:
+            print("making gamenet model")
             self.model = model(mimic_sample)
         elif self.model_type == RETAIN:
+            print("making retain model")
             self.model = model(
                 mimic_sample,
                 feature_keys = ["conditions", "procedures"],
@@ -38,20 +44,11 @@ class ModelWrapper():
         else:
             raise Exception("!!! ERROR: please send in either GAMENet or RETAIN class as the model !!!")
 
-
-        #if not(_REQUIRED_DL_KEYS == dataloaders.keys()):
-        #    raise Exception("!!! ERROR: please make sure the dataloaders dict has train, val, and test keys !!!")
-
-
-        #self.train_loader = dataloaders["train"]
-        #self.val_loader = dataloaders["val"]
-        #self.test_loader = dataloaders["test"]
-
         self.trainer = Trainer(
             model = self.model,
             metrics = metrics,
             device = device,
-            exp_name = experiment
+            exp_name = self.experiment
         )
 
     def get_model(self):
@@ -63,6 +60,14 @@ class ModelWrapper():
     def get_model_type(self):
         return self.model_type
 
+    def get_experiment_name(self):
+        return self.experiment
+
+    def load_best_model(self):
+        model_path = _BEST_MODEL_PATH.format(self.experiment)
+        print("loading model from path... {}".format(model_path))
+        self.trainer.load_ckpt(model_path)
+
     def train_model(self, train_loader, val_loader, decay_weight=_DECAY_WEIGHT, learning_rate=_LR, epochs=_EPOCHS):
         self.trainer.train(
             train_dataloader = train_loader,
@@ -72,14 +77,19 @@ class ModelWrapper():
             monitor_criterion = "max",
             weight_decay = decay_weight,
             optimizer_params = {"lr": learning_rate}
+            #load_best_model_at_last = False
         )
 
         return self.trainer
 
-    def evaluate_model(self, test_loader):
+    def evaluate_model(self, test_loader, load=False):
+        if load:
+            self.load_best_model
         result = self.trainer.evaluate(test_loader)
         print(result)
         return result
 
-
-
+    def inference(self, x, load=False):
+        if load:
+            self.load_best_model()
+        return self.trainer.inference(x)

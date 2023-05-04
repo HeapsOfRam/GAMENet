@@ -1,0 +1,20 @@
+o---RESULTS---
+---baseline---
+--result for experiment drug_recommendation_retain_task_drug_recommendation--
+{'jaccard_samples': 0.44903883014010837, 'accuracy': 0.0022041603526656564, 'hamming_loss': 0.07762054001928641, 'precision_samples': 0.7681385263749924, 'recall_samples': 0.5319665235066241, 'pr_auc_samples': 0.752571996358824, 'f1_samples': 0.6004430263181858, 'loss': 0.18868319480167087}
+Evaluation: 100%|█████████████████████████████████████████████████████████████| 227/227 [00:04<00:00, 53.21it/s]
+retain recommended an average of 15.134247141479543 drugs / visit
+--result for experiment drug_recommendation_retain_task_no_hist--
+{'jaccard_samples': 0.4422332339253063, 'accuracy': 0.0020308692120227455, 'hamming_loss': 0.07867519631735716, 'precision_samples': 0.7727283179295592, 'recall_samples': 0.5217680714278313, 'pr_auc_samples': 0.7498175302402943, 'f1_samples': 0.5932211444043854, 'loss': 0.1910918060190234}
+Evaluation: 100%|████████████████████████████████████████████████████████████| 231/231 [00:02<00:00, 105.94it/s]
+retain recommended an average of 15.408543189818575 drugs / visit
+---gamenet---
+--result for experiment drug_recommendation_gamenet_task_drug_recommendation--
+{'jaccard_samples': 0.44590306857630424, 'accuracy': 0.0018597602975616476, 'hamming_loss': 0.08005854800936768, 'precision_samples': 0.7450031403264907, 'recall_samples': 0.5433939913663935, 'pr_auc_samples': 0.7418782289937023, 'f1_samples': 0.5972671937997006, 'loss': 0.19355338037276584}
+Evaluation: 100%|█████████████████████████████████████████████████████████████| 227/227 [00:04<00:00, 52.44it/s]
+gamenet recommended an average of 16.77503788400606 drugs / visit
+--result for experiment drug_recommendation_gamenet_task_no_hist--
+{'jaccard_samples': 0.45256667358188624, 'accuracy': 0.002910912537232602, 'hamming_loss': 0.08465001353912809, 'precision_samples': 0.7423546896240061, 'recall_samples': 0.5628853201559602, 'pr_auc_samples': 0.7423730699535172, 'f1_samples': 0.6011090061267381, 'loss': 0.2281430975828336}
+Evaluation: 100%|████████████████████████████████████████████████████████████| 231/231 [00:01<00:00, 212.50it/s]
+gamenet recommended an average of 18.80429190360141 drugs / visit
+EXECUTION FINISHED...
