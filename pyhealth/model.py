@@ -1,3 +1,5 @@
+import numpy as np
+
 from pyhealth.models import RETAIN, GAMENet
 from pyhealth.trainer import Trainer
 
@@ -11,6 +13,8 @@ _LR = 1e-3
 #_DECAY_WEIGHT = 0.85
 _DECAY_WEIGHT = 1e-5
 
+_THRESH = 0.5
+
 # metrics to track from training/evaluation
 _METRICS = [
         "jaccard_samples", "accuracy", "hamming_loss",
@@ -23,7 +27,6 @@ _REQUIRED_DL_KEYS = {'train', 'val', 'test'}
 _DEFAULT_EXPERIMENT = "drug_recommendation"
 
 _BEST_MODEL_PATH = "output/{}/best.ckpt"
-#_BEST_MODEL_PATH = "output/{}/last.ckpt"
 
 class ModelWrapper():
     def __init__(self, mimic_sample, model=GAMENet, experiment=_DEFAULT_EXPERIMENT, device=_DEVICE, metrics=_METRICS):
@@ -77,7 +80,6 @@ class ModelWrapper():
             monitor_criterion = "max",
             weight_decay = decay_weight,
             optimizer_params = {"lr": learning_rate}
-            #load_best_model_at_last = False
         )
 
         return self.trainer
@@ -93,3 +95,35 @@ class ModelWrapper():
         if load:
             self.load_best_model()
         return self.trainer.inference(x)
+
+    def calc_avg_drugs_per_visit(self, test):
+        _,y_hat,_ = self.inference(test)
+        y_hat = np.where(y_hat >= _THRESH, 1, 0)
+
+        num_drugs = 0
+
+        for visit in y_hat:
+            num_drugs = num_drugs + np.sum(visit)
+
+        return (num_drugs * 1.0) / len(y_hat)
+
+    def calc_ddi_rate(self, test, ddi_mat):
+        _,y_hat,_ = self.inference(test)
+        y_hat = np.where(y_hat >= _THRESH, 1, 0)
+
+        all_cnt = 0
+        ddi_cnt = 0
+
+        for visit in y_hat:
+            for i, med_i in enumerate(visit):
+                for j, med_j in enumerate(visit):
+                    if j > i and med_i == 1 and med_j == 1:
+                        all_cnt = all_cnt + 1
+
+                        if ddi_mat[i, j] == 1 or ddi_mat[j, i] == 1:
+                            ddi_cnt = ddi_cnt + 1
+
+        if all_cnt == 0:
+            return 0
+
+        return (ddi_cnt * 1.0) / all_cnt
