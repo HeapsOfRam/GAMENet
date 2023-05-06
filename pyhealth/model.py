@@ -1,5 +1,7 @@
 import numpy as np
 
+from alt_gamenets import GAMENetNoProc
+
 from pyhealth.models import RETAIN, GAMENet
 from pyhealth.trainer import Trainer
 
@@ -29,18 +31,21 @@ _DEFAULT_EXPERIMENT = "drug_recommendation"
 _BEST_MODEL_PATH = "output/{}/best.ckpt"
 
 class ModelWrapper():
-    def __init__(self, mimic_sample, model=GAMENet, experiment=_DEFAULT_EXPERIMENT, device=_DEVICE, metrics=_METRICS):
+    def __init__(self, mimic_sample, model=GAMENet, experiment=_DEFAULT_EXPERIMENT, device=_DEVICE, metrics=_METRICS, feature_keys = ["conditions", "procedures"]):
         self.model_type = model
         self.experiment = experiment
 
         if self.model_type == GAMENet:
             print("making gamenet model")
             self.model = model(mimic_sample)
+        elif self.model_type == GAMENetNoProc:
+            print("making gamenet model without procedures...")
+            self.model = model(mimic_sample)
         elif self.model_type == RETAIN:
             print("making retain model")
             self.model = model(
                 mimic_sample,
-                feature_keys = ["conditions", "procedures"],
+                feature_keys = feature_keys,
                 label_key = "drugs",
                 mode = "multilabel"
             )

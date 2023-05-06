@@ -6,10 +6,14 @@ import numpy as np
 
 # import utilities and variables from the mimic abstractions
 from mimic import *
-from mimic import _DEV, _DRUG_REC_TN, _NO_HIST_TN, _ALL_TASKS
+from mimic import _DEV, _DRUG_REC_TN, _NO_HIST_TN, _NO_PROC_TN, _ALL_TASKS
 
+# import model wrapper and variables
 from model import ModelWrapper
 from model import _DEVICE, _EPOCHS, _LR, _DECAY_WEIGHT
+
+# import alternative gamenet models
+from alt_gamenets import GAMENetNoProc
 
 # pyhealth imports
 import pyhealth
@@ -26,15 +30,6 @@ _DPV_KEY = "avg_dpv"
 _DDI_RATE_KEY = "ddi_rate"
 
 _BASE_DDI_RATE = 0.0777
-
-#def avg_drugs_per_visit(y_hat):
-#    num_drugs = []
-#
-#    for visit in y_hat:
-#        num_drugs.append(np.sum(visit))
-#
-#    return (sum(num_drugs) * 1.0) / len(num_drugs)
-
 
 def print_ddi_results(model, result):
     exp = model.get_experiment_name()
@@ -81,16 +76,28 @@ def main(args):
     ddi_mats = {}
 
     for taskname in mimic.get_task_names():
-        ddi_mats[taskname] = GAMENet(drug_task_data[taskname]).generate_ddi_adj()
+        if taskname == _NO_PROC_TN:
+            model_type = GAMENetNoProc
+        else:
+            model_type = GAMENet
+        #ddi_mats[taskname] = GAMENet(drug_task_data[taskname]).generate_ddi_adj()
+        ddi_mats[taskname] = model_type(drug_task_data[taskname]).generate_ddi_adj()
+
 
     # baseline
     if args.baseline:
         print("---RETAIN TRAINING---")
         for taskname,dataloader in dataloaders.items():
             print("--training retain on {} data--".format(taskname))
+            if taskname == _NO_PROC_TN:
+                feature_keys = ["conditions"]
+            else:
+                feature_keys = ["conditions", "procedures"]
+
             retain[taskname] = ModelWrapper(
                     drug_task_data[taskname],
                     model=RETAIN,
+                    feature_keys=feature_keys,
                     experiment="{}_task_{}".format(_RETAIN_EXP, taskname)
             )
 
@@ -104,7 +111,6 @@ def main(args):
         for taskname in mimic.get_task_names():
             print("--eval retain on {} data--".format(taskname))
             test_loader = dataloaders[taskname]["test"]
-            #baseline_result[taskname] = retain[taskname].evaluate_model(test_loader)
             baseline_result[taskname] = {}
             baseline_result[taskname][_SCORE_KEY] = retain[taskname].evaluate_model(test_loader)
             baseline_result[taskname][_DPV_KEY] = retain[taskname].calc_avg_drugs_per_visit(test_loader)
@@ -117,9 +123,14 @@ def main(args):
         print("---GAMENET TRAINING---")
         for taskname,dataloader in dataloaders.items():
             print("--training gamenet on {} data--".format(taskname))
+            if taskname == _NO_PROC_TN:
+                model_type = GAMENetNoProc
+            else:
+                model_type = GAMENet
             gamenet[taskname] = ModelWrapper(
                 drug_task_data[taskname],
-                model=GAMENet,
+                #model=GAMENet,
+                model=model_type,
                 experiment="{}_task_{}".format(_GAMENET_EXP, taskname)
             )
             gamenet[taskname].train_model(
@@ -135,9 +146,6 @@ def main(args):
             gamenet_result[taskname] = {}
             gamenet_result[taskname][_SCORE_KEY] = gamenet[taskname].evaluate_model(test_loader)
             gamenet_result[taskname][_DPV_KEY] = gamenet[taskname].calc_avg_drugs_per_visit(test_loader)
-
-            #ddi_mat = gamenet[taskname].get_model().generate_ddi_adj()
-            #gamenet_result[taskname][_DDI_RATE_KEY] = gamenet[taskname].calc_ddi_rate(test_loader, ddi_mat)
             gamenet_result[taskname][_DDI_RATE_KEY] = gamenet[taskname].calc_ddi_rate(test_loader, ddi_mats[taskname])
     else:
         print("---SKIPPING GAMENET---")
@@ -148,16 +156,10 @@ def main(args):
         print("---baseline---")
         for taskname in mimic.get_task_names():
             print("--result for experiment {}--".format(retain[taskname].get_experiment_name()))
-
             print(baseline_result[taskname][_SCORE_KEY])
 
             test_loader = dataloaders[taskname]["test"]
-
-            #adpv = retain[taskname].calc_avg_drugs_per_visit(test_loader)
-            #print("retain recommended an average of {} drugs / visit".format(adpv))
-
             print_ddi_results(retain[taskname], baseline_result[taskname])
-
     else:
         print("...BASELINE SKIPPED, NO BASELINE RESULTS...")
 
@@ -168,22 +170,7 @@ def main(args):
             print(gamenet_result[taskname][_SCORE_KEY])
 
             test_loader = dataloaders[taskname]["test"]
-
-            #adpv = gamenet[taskname].calc_avg_drugs_per_visit(test_loader)
-            #print("gamenet recommended an average of {} drugs / visit".format(adpv))
-            #print(
-            #    "gamenet recommended an average of {} drugs / visit".format(
-            #        gamenet_result[taskname][_DPV_KEY]
-            #    )
-            #)
-
-            #ddi_mat = gamenet[taskname].get_model().generate(ddi_adj)
-
-            #print("ddi rate: {}".format(gamenet_result[taskname][_DDI_RATE_KEY]))
-
             print_ddi_results(gamenet[taskname], gamenet_result[taskname])
-
-
     else:
         print("...GAMENET SKIPPED, NO GAMENET RESULTS...")
 

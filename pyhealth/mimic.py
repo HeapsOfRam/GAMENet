@@ -17,8 +17,9 @@ _MIMIC_CODE_MAP = {"NDC": ("ATC", {"target_kwargs": {"level": 3}})}
 # task ids
 _DRUG_REC_TN = "drug_recommendation"
 _NO_HIST_TN = "no_hist"
+_NO_PROC_TN = "no_proc"
 
-_ALL_TASKS = [_DRUG_REC_TN, _NO_HIST_TN]
+_ALL_TASKS = [_DRUG_REC_TN, _NO_HIST_TN, _NO_PROC_TN]
 
 # dictionary keys for the task dictionary
 _TN = "name"
@@ -27,7 +28,8 @@ _TTASK = "task"
 # default task lists
 _MIMIC4_TASKS = {
         _DRUG_REC_TN: drug_recommendation_mimic4_fn,
-        _NO_HIST_TN: drug_recommendation_mimic4_no_hist
+        _NO_HIST_TN: drug_recommendation_mimic4_no_hist,
+        _NO_PROC_TN: drug_recommendation_mimic4_no_proc
         }
 _MIMIC3_TASKS = {
         _DRUG_REC_TN: drug_recommendation_mimic3_fn
