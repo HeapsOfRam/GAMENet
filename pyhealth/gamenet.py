@@ -2,15 +2,12 @@
 import argparse
 import sys
 import numpy as np
-import datetime
 
 # import utilities and variables from the mimic abstractions
 from mimic import MIMIC3, MIMIC4, MIMICWrapper
-#from mimic import _DEV, _DRUG_REC_TN, _NO_HIST_TN, _NO_PROC_TN, _ALL_TASKS
 
 # import model wrapper and variables
 from model import ModelWrapper
-#from model import _DEVICE, _EPOCHS, _LR, _DECAY_WEIGHT
 
 # import alternative gamenet models
 from alt_gamenets import GAMENetNoProc
@@ -82,43 +79,32 @@ def main(args):
     baseline_result = {}
     gamenet_result = {}
 
-    run_times = {}
-
     ddi_mats = {}
 
+    # create ddi matrices for calculating ddi metrics
+    # also, create our runtime dicts
     for taskname in mimic.get_task_names():
-        #if taskname == _NO_PROC_TN:
-        #    model_type = GAMENetNoProc
-        #else:
-        #    model_type = GAMENet
-        #ddi_mats[taskname] = GAMENet(drug_task_data[taskname]).generate_ddi_adj()
         model_type = MODEL_TYPES_PER_TASK[taskname][GN_KEY]
         ddi_mats[taskname] = model_type(drug_task_data[taskname]).generate_ddi_adj()
-        run_times[taskname] = {}
 
     # baseline
     if args.baseline:
         print("---RETAIN TRAINING---")
         for taskname,dataloader in dataloaders.items():
             print("--training retain on {} data--".format(taskname))
-            training_start = datetime.datetime.now()
-
+            # create and train retain model
             retain[taskname] = ModelWrapper(
                     drug_task_data[taskname],
                     model=MODEL_TYPES_PER_TASK[taskname][RT_KEY],
                     feature_keys=RETAIN_FEATS_PER_TASK[taskname],
                     experiment="{}_task_{}".format(RETAIN_EXP, taskname)
             )
-
             retain[taskname].train_model(
                     dataloader["train"], dataloader["val"],
                     decay_weight=args.decay,
                     learning_rate=args.rate,
                     epochs=args.epochs
             )
-
-            train_time = (datetime.datetime.now() - training_start).total_seconds()
-            run_times[taskname][RT_KEY] = train_time
 
         print("---RETAIN EVALUATION---")
         for taskname in mimic.get_task_names():
@@ -127,7 +113,9 @@ def main(args):
             baseline_result[taskname] = {}
             baseline_result[taskname][SCORE_KEY] = retain[taskname].evaluate_model(test_loader)
             baseline_result[taskname][DPV_KEY] = retain[taskname].calc_avg_drugs_per_visit(test_loader)
-            baseline_result[taskname][DDI_RATE_KEY] = retain[taskname].calc_ddi_rate(test_loader, ddi_mats[taskname])
+            baseline_result[taskname][DDI_RATE_KEY] = retain[taskname].calc_ddi_rate(
+                test_loader, ddi_mats[taskname]
+            )
     else:
         print("---SKIPPING BASELINE---")
 
@@ -136,8 +124,7 @@ def main(args):
         print("---GAMENET TRAINING---")
         for taskname,dataloader in dataloaders.items():
             print("--training gamenet on {} data--".format(taskname))
-            training_start = datetime.datetime.now()
-
+            # create and train gamenet model
             gamenet[taskname] = ModelWrapper(
                 drug_task_data[taskname],
                 model=MODEL_TYPES_PER_TASK[taskname][GN_KEY],
@@ -150,9 +137,6 @@ def main(args):
                 epochs=args.epochs
             )
 
-            train_time = (datetime.datetime.now() - training_start).total_seconds()
-            run_times[taskname][GN_KEY] = train_time
-
         print("---GAMENET EVALUATION---")
         for taskname in mimic.get_task_names():
             print("--eval gamenet on {} data--".format(taskname))
@@ -160,7 +144,9 @@ def main(args):
             gamenet_result[taskname] = {}
             gamenet_result[taskname][SCORE_KEY] = gamenet[taskname].evaluate_model(test_loader)
             gamenet_result[taskname][DPV_KEY] = gamenet[taskname].calc_avg_drugs_per_visit(test_loader)
-            gamenet_result[taskname][DDI_RATE_KEY] = gamenet[taskname].calc_ddi_rate(test_loader, ddi_mats[taskname])
+            gamenet_result[taskname][DDI_RATE_KEY] = gamenet[taskname].calc_ddi_rate(
+                test_loader, ddi_mats[taskname]
+            )
     else:
         print("---SKIPPING GAMENET---")
 
@@ -173,7 +159,7 @@ def main(args):
             print(baseline_result[taskname][SCORE_KEY])
 
             test_loader = dataloaders[taskname]["test"]
-            print("training took...{} seconds".format(run_times[taskname][RT_KEY]))
+            print("retain training took...{} seconds".format(retain[taskname].get_train_time()))
             print_ddi_results(retain[taskname], baseline_result[taskname])
     else:
         print("...BASELINE SKIPPED, NO BASELINE RESULTS...")
@@ -187,7 +173,7 @@ def main(args):
             print(gamenet_result[taskname][SCORE_KEY])
 
             test_loader = dataloaders[taskname]["test"]
-            print("training took...{} seconds".format(run_times[taskname][GN_KEY]))
+            print("gamenet training took...{} seconds".format(gamenet[taskname].get_train_time()))
             print_ddi_results(gamenet[taskname], gamenet_result[taskname])
     else:
         print("...GAMENET SKIPPED, NO GAMENET RESULTS...")

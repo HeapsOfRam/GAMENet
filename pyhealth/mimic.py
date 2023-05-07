@@ -1,6 +1,3 @@
-# import the drug tasks we have available
-#from drug_rec_task import *
-
 # import our constants
 from constants import (
     DEV, DATA_DIR,
@@ -12,7 +9,7 @@ from constants import (
 
 # import pyhealth datasets and tasks
 from pyhealth.datasets import MIMIC4Dataset, MIMIC3Dataset
-#from pyhealth.tasks import drug_recommendation_mimic4_fn, drug_recommendation_mimic3_fn
+
 # import dataloader related functions
 from pyhealth.datasets.splitter import split_by_patient
 from pyhealth.datasets import split_by_patient, get_dataloader
@@ -67,10 +64,8 @@ class MIMICWrapper():
 
         self.tasklist = []
         self.prepared_data = {}
-        #self.tasknames = []
 
         for taskname,task in self.tasks.items():
-            #self.tasknames.append(taskname)
             self.tasklist.append({TTASK: task, TN: taskname})
 
     def load_data(self, dev=DEV):
@@ -100,7 +95,6 @@ class MIMICWrapper():
         self.mimic.info()
 
     def get_task_names(self):
-        #return self.tasknames
         return self.tasks.keys()
 
     def get_tasklist(self):

@@ -1,11 +1,11 @@
 import numpy as np
+import datetime
 
 from alt_gamenets import GAMENetNoHist, GAMENetNoProc
 from constants import (
     DEVICE,
     EPOCHS, LR, DECAY_WEIGHT, THRESH,
     METRICS,
-    #REQUIRED_DL_KEYS,
     DEFAULT_EXPERIMENT, BEST_MODEL_PATH
 )
 
@@ -44,6 +44,8 @@ class ModelWrapper():
             exp_name = self.experiment
         )
 
+        self.train_time = None
+
     def get_model(self):
         return self.model
 
@@ -56,12 +58,17 @@ class ModelWrapper():
     def get_experiment_name(self):
         return self.experiment
 
+    def get_train_time(self):
+        return self.train_time
+
     def load_best_model(self):
         model_path = BEST_MODEL_PATH.format(self.experiment)
         print("loading model from path... {}".format(model_path))
         self.trainer.load_ckpt(model_path)
 
     def train_model(self, train_loader, val_loader, decay_weight=DECAY_WEIGHT, learning_rate=LR, epochs=EPOCHS):
+        train_start = datetime.datetime.now()
+
         self.trainer.train(
             train_dataloader = train_loader,
             val_dataloader = val_loader,
@@ -71,6 +78,8 @@ class ModelWrapper():
             weight_decay = decay_weight,
             optimizer_params = {"lr": learning_rate}
         )
+
+        self.train_time = (datetime.datetime.now() - train_start).total_seconds()
 
         return self.trainer
 

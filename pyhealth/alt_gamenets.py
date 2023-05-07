@@ -4,8 +4,6 @@ from typing import Tuple, List, Dict, Optional
 import torch
 import torch.nn as nn
 
-#import numpy as np
-
 from pyhealth.datasets import SampleDataset
 from pyhealth.medcode import ATC
 from pyhealth.models import BaseModel, GAMENetLayer, GAMENet
@@ -54,14 +52,12 @@ class GAMENetLayerNoDM(GAMENetLayer):
         self.ehr_gcn = GCN(adj=ehr_adj, hidden_size=hidden_size, dropout=dropout)
         self.ddi_gcn = GCN(adj=ddi_adj, hidden_size=hidden_size, dropout=dropout)
         self.beta = nn.Parameter(torch.FloatTensor(1))
-        #self.fc = nn.Linear(3 * hidden_size, num_labels)
         self.fc = nn.Linear(2 * hidden_size, num_labels)
         self.bce_loss_fn = nn.BCEWithLogitsLoss()
 
     def forward(
         self,
         queries: torch.tensor,
-        #prev_drugs: torch.tensor,
         curr_drugs: torch.tensor,
         mask: Optional[torch.tensor] = None,
     ) -> Tuple[torch.tensor, torch.tensor]:
@@ -89,34 +85,11 @@ class GAMENetLayerNoDM(GAMENetLayer):
         # memory bank
         MB = self.ehr_gcn() - self.ddi_gcn() * torch.sigmoid(self.beta)
 
-        # dynamic memory
-        #DM_keys = queries[:, :-1, :]
-        #DM_values = prev_drugs
-        ##DM_keys = np.ones(DM_keys.shape)
-        ##DM_values = np.ones(DM_values.shape)
-        ##DM_keys = torch.ones_like(DM_keys)
-        ##DM_values = torch.ones_like(DM_values)
-        ##DM_keys = torch.zeros_like(DM_keys)
-        ##DM_values = torch.zeros_like(DM_values)
-
         """O: Output memory representation"""
-        #a_c = torch.softmax(torch.mm(query, MB.t()), dim=-1)
         a_c = torch.softmax(torch.mm(query, MB.t()), dim=-1)
         o_b = torch.mm(a_c, MB)
 
-        #a_s = torch.softmax(torch.einsum("bd,bvd->bv", query, DM_keys), dim=1)
-        ##a_s2 = torch.softmax(query, dim=1)
-        ##print(a_s.shape) # 64, 0
-        ##print(MB.shape) # 160, 128
-        ##print(DM_keys.shape) # 64, 0, 128
-        ##print(DM_values.shape) # 64, 0, 160
-        #a_m = torch.einsum("bv,bvz->bz", a_s, DM_values.float())
-        ##print(a_m.shape)
-        #o_d = torch.mm(a_m, MB)
-        ##o_d = torch.mm(a_s, MB)
-
         """R: Response"""
-        #memory_output = torch.cat([query, o_b, o_d], dim=-1)
         memory_output = torch.cat([query, o_b], dim=-1)
         logits = self.fc(memory_output)
 
@@ -198,7 +171,6 @@ class GAMENetNoHist(GAMENet):
             raise ValueError("ehr_adj is determined by the dataset")
         if "ddi_adj" in kwargs:
             raise ValueError("ddi_adj is determined by the dataset")
-        #self.gamenet = GAMENetLayer(
         self.gamenet = GAMENetLayerNoDM(
             hidden_size=hidden_dim,
             ehr_adj=ehr_adj,
@@ -292,18 +264,10 @@ class GAMENetNoHist(GAMENet):
         curr_drugs = batch_to_multihot(curr_drugs, label_size)
         curr_drugs = curr_drugs.to(self.device)
 
-        #prev_drugs = [p[:-1] for p in drugs_all]
-        #max_num_visit = max([len(p) for p in prev_drugs])
-        #prev_drugs = [p + [[]] * (max_num_visit - len(p)) for p in prev_drugs]
-        #prev_drugs = [batch_to_multihot(p, label_size) for p in prev_drugs]
-        #prev_drugs = torch.stack(prev_drugs, dim=0)
-        #prev_drugs = prev_drugs.to(self.device)
-
         # get mask
         mask = torch.sum(conditions, dim=2) != 0
 
         # process drugs
-        #loss, y_prob = self.gamenet(queries, prev_drugs, curr_drugs, mask)
         loss, y_prob = self.gamenet(queries, curr_drugs, mask)
 
 
@@ -313,7 +277,6 @@ class GAMENetNoHist(GAMENet):
             "y_true": curr_drugs,
         }
 
-#class GAMENetNoProc(BaseModel):
 class GAMENetNoProc(GAMENet):
     """GAMENet model.
 
@@ -372,16 +335,8 @@ class GAMENetNoProc(GAMENet):
             dropout=dropout if num_layers > 1 else 0,
             batch_first=True,
         )
-        #self.proc_rnn = nn.GRU(
-        #    embedding_dim,
-        #    hidden_dim,
-        #    num_layers=num_layers,
-        #    dropout=dropout if num_layers > 1 else 0,
-        #    batch_first=True,
-        #)
         self.query = nn.Sequential(
             nn.ReLU(),
-            #nn.Linear(hidden_dim * 2, hidden_dim),
             nn.Linear(hidden_dim, hidden_dim),
         )
 
