@@ -1,41 +1,43 @@
 # import regular python libraries
 import argparse
 import sys
-#import torch
 import numpy as np
+import datetime
 
 # import utilities and variables from the mimic abstractions
-from mimic import *
-from mimic import _DEV, _DRUG_REC_TN, _NO_HIST_TN, _NO_PROC_TN, _ALL_TASKS
+from mimic import MIMIC3, MIMIC4, MIMICWrapper
+#from mimic import _DEV, _DRUG_REC_TN, _NO_HIST_TN, _NO_PROC_TN, _ALL_TASKS
 
 # import model wrapper and variables
 from model import ModelWrapper
-from model import _DEVICE, _EPOCHS, _LR, _DECAY_WEIGHT
+#from model import _DEVICE, _EPOCHS, _LR, _DECAY_WEIGHT
 
 # import alternative gamenet models
 from alt_gamenets import GAMENetNoProc
+
+# import our constants
+from constants import (
+    DEV,
+    EPOCHS, LR, DECAY_WEIGHT,
+    DRUG_REC_TN, ALL_TASKS,
+    GN_KEY, RT_KEY,
+    MODEL_TYPES_PER_TASK, RETAIN_FEATS_PER_TASK,
+    GAMENET_EXP, RETAIN_EXP,
+    SCORE_KEY, DPV_KEY, DDI_RATE_KEY,
+    BASE_DDI_RATE
+)
 
 # pyhealth imports
 import pyhealth
 from pyhealth.models import RETAIN, GAMENet
 from pyhealth.trainer import Trainer
 
-# experiment names
-_GAMENET_EXP = "drug_recommendation_gamenet"
-_RETAIN_EXP = "drug_recommendation_retain"
-
-# result keys
-_SCORE_KEY = "scores"
-_DPV_KEY = "avg_dpv"
-_DDI_RATE_KEY = "ddi_rate"
-
-_BASE_DDI_RATE = 0.0777
-
 def print_ddi_results(model, result):
     exp = model.get_experiment_name()
-    print("{} model recommended an average of {} drugs / visit".format(exp, result[_DPV_KEY]))
-    print("{} model ddi rate: {}".format(exp, result[_DDI_RATE_KEY]))
-    print("{} model delta ddi rate: {}".format(exp, result[_DDI_RATE_KEY] - _BASE_DDI_RATE))
+    print("{} model recommended an average of {} drugs / visit".format(exp, result[DPV_KEY]))
+    print("{} model ddi rate: {}".format(exp, result[DDI_RATE_KEY]))
+    print("{} model delta ddi rate: {}".format(exp, result[DDI_RATE_KEY] - BASE_DDI_RATE))
+    print("\n{}\n".format("-" * 10))
 
 def main(args):
     # choose dataset
@@ -50,9 +52,16 @@ def main(args):
         print("---RUNNING ALL TASKS!!!---")
         tasks = mimic_dataset.all_tasks()
     else:
-        for task in args.tasks:
+        tasklist = args.tasks
+
+        if not(tasklist):
+            print("--NO TASK PROVIDED, RUNNING DEFAULT!--")
+            tasklist = [DRUG_REC_TN]
+
+        for task in tasklist:
             print(task)
             tasks[task] = mimic_dataset.all_tasks()[task]
+
 
     print("---will run tasks {}---".format(tasks.keys()))
 
@@ -73,32 +82,32 @@ def main(args):
     baseline_result = {}
     gamenet_result = {}
 
+    run_times = {}
+
     ddi_mats = {}
 
     for taskname in mimic.get_task_names():
-        if taskname == _NO_PROC_TN:
-            model_type = GAMENetNoProc
-        else:
-            model_type = GAMENet
+        #if taskname == _NO_PROC_TN:
+        #    model_type = GAMENetNoProc
+        #else:
+        #    model_type = GAMENet
         #ddi_mats[taskname] = GAMENet(drug_task_data[taskname]).generate_ddi_adj()
+        model_type = MODEL_TYPES_PER_TASK[taskname][GN_KEY]
         ddi_mats[taskname] = model_type(drug_task_data[taskname]).generate_ddi_adj()
-
+        run_times[taskname] = {}
 
     # baseline
     if args.baseline:
         print("---RETAIN TRAINING---")
         for taskname,dataloader in dataloaders.items():
             print("--training retain on {} data--".format(taskname))
-            if taskname == _NO_PROC_TN:
-                feature_keys = ["conditions"]
-            else:
-                feature_keys = ["conditions", "procedures"]
+            training_start = datetime.datetime.now()
 
             retain[taskname] = ModelWrapper(
                     drug_task_data[taskname],
-                    model=RETAIN,
-                    feature_keys=feature_keys,
-                    experiment="{}_task_{}".format(_RETAIN_EXP, taskname)
+                    model=MODEL_TYPES_PER_TASK[taskname][RT_KEY],
+                    feature_keys=RETAIN_FEATS_PER_TASK[taskname],
+                    experiment="{}_task_{}".format(RETAIN_EXP, taskname)
             )
 
             retain[taskname].train_model(
@@ -107,14 +116,18 @@ def main(args):
                     learning_rate=args.rate,
                     epochs=args.epochs
             )
+
+            train_time = (datetime.datetime.now() - training_start).total_seconds()
+            run_times[taskname][RT_KEY] = train_time
+
         print("---RETAIN EVALUATION---")
         for taskname in mimic.get_task_names():
             print("--eval retain on {} data--".format(taskname))
             test_loader = dataloaders[taskname]["test"]
             baseline_result[taskname] = {}
-            baseline_result[taskname][_SCORE_KEY] = retain[taskname].evaluate_model(test_loader)
-            baseline_result[taskname][_DPV_KEY] = retain[taskname].calc_avg_drugs_per_visit(test_loader)
-            baseline_result[taskname][_DDI_RATE_KEY] = retain[taskname].calc_ddi_rate(test_loader, ddi_mats[taskname])
+            baseline_result[taskname][SCORE_KEY] = retain[taskname].evaluate_model(test_loader)
+            baseline_result[taskname][DPV_KEY] = retain[taskname].calc_avg_drugs_per_visit(test_loader)
+            baseline_result[taskname][DDI_RATE_KEY] = retain[taskname].calc_ddi_rate(test_loader, ddi_mats[taskname])
     else:
         print("---SKIPPING BASELINE---")
 
@@ -123,15 +136,12 @@ def main(args):
         print("---GAMENET TRAINING---")
         for taskname,dataloader in dataloaders.items():
             print("--training gamenet on {} data--".format(taskname))
-            if taskname == _NO_PROC_TN:
-                model_type = GAMENetNoProc
-            else:
-                model_type = GAMENet
+            training_start = datetime.datetime.now()
+
             gamenet[taskname] = ModelWrapper(
                 drug_task_data[taskname],
-                #model=GAMENet,
-                model=model_type,
-                experiment="{}_task_{}".format(_GAMENET_EXP, taskname)
+                model=MODEL_TYPES_PER_TASK[taskname][GN_KEY],
+                experiment="{}_task_{}".format(GAMENET_EXP, taskname)
             )
             gamenet[taskname].train_model(
                 dataloader["train"], dataloader["val"],
@@ -139,37 +149,45 @@ def main(args):
                 learning_rate = args.rate,
                 epochs=args.epochs
             )
+
+            train_time = (datetime.datetime.now() - training_start).total_seconds()
+            run_times[taskname][GN_KEY] = train_time
+
         print("---GAMENET EVALUATION---")
         for taskname in mimic.get_task_names():
             print("--eval gamenet on {} data--".format(taskname))
             test_loader = dataloaders[taskname]["test"]
             gamenet_result[taskname] = {}
-            gamenet_result[taskname][_SCORE_KEY] = gamenet[taskname].evaluate_model(test_loader)
-            gamenet_result[taskname][_DPV_KEY] = gamenet[taskname].calc_avg_drugs_per_visit(test_loader)
-            gamenet_result[taskname][_DDI_RATE_KEY] = gamenet[taskname].calc_ddi_rate(test_loader, ddi_mats[taskname])
+            gamenet_result[taskname][SCORE_KEY] = gamenet[taskname].evaluate_model(test_loader)
+            gamenet_result[taskname][DPV_KEY] = gamenet[taskname].calc_avg_drugs_per_visit(test_loader)
+            gamenet_result[taskname][DDI_RATE_KEY] = gamenet[taskname].calc_ddi_rate(test_loader, ddi_mats[taskname])
     else:
         print("---SKIPPING GAMENET---")
 
     # print results
-    print("---RESULTS---")
+    print("\n---RESULTS---\n\n")
     if args.baseline:
-        print("---baseline---")
+        print("---baseline---\n")
         for taskname in mimic.get_task_names():
             print("--result for experiment {}--".format(retain[taskname].get_experiment_name()))
-            print(baseline_result[taskname][_SCORE_KEY])
+            print(baseline_result[taskname][SCORE_KEY])
 
             test_loader = dataloaders[taskname]["test"]
+            print("training took...{} seconds".format(run_times[taskname][RT_KEY]))
             print_ddi_results(retain[taskname], baseline_result[taskname])
     else:
         print("...BASELINE SKIPPED, NO BASELINE RESULTS...")
 
+    print("{}\n".format("*" * 10))
+
     if args.gamenet:
-        print("---gamenet---")
+        print("---gamenet---\n")
         for taskname in mimic.get_task_names():
             print("--result for experiment {}--".format(gamenet[taskname].get_experiment_name()))
-            print(gamenet_result[taskname][_SCORE_KEY])
+            print(gamenet_result[taskname][SCORE_KEY])
 
             test_loader = dataloaders[taskname]["test"]
+            print("training took...{} seconds".format(run_times[taskname][GN_KEY]))
             print_ddi_results(gamenet[taskname], gamenet_result[taskname])
     else:
         print("...GAMENET SKIPPED, NO GAMENET RESULTS...")
@@ -198,25 +216,26 @@ if __name__ == "__main__":
             )
     parser.add_argument(
             "-e", "--epochs", dest="epochs",
-            default=_EPOCHS, type=int,
+            default=EPOCHS, type=int,
             help="how many epochs to run the training for"
             )
     parser.add_argument(
             "-d", "--decay-weight", dest="decay",
-            default=_DECAY_WEIGHT, type=float,
+            default=DECAY_WEIGHT, type=float,
             help="value for the decay weight hyperparameter"
             )
     parser.add_argument(
             "-l", "--learning-rate", dest="rate",
-            default=_LR, type=float,
+            default=LR, type=float,
             help="value for the learning weight hyperparameter"
             )
     parser.add_argument(
             "-t", "--task", dest="tasks",
             action="extend", nargs="+", type=str,
-            choices=_ALL_TASKS,
-            default=[_DRUG_REC_TN],
-            help="add a task to the list of tasks to be evaluated; options are {}".format(_ALL_TASKS)
+            choices=ALL_TASKS,
+            #default=[DRUG_REC_TN],
+            default=[],
+            help="add a task to the list of tasks to be evaluated; options are {}".format(ALL_TASKS)
             )
     parser.add_argument(
             "-a", "--all-tasks", dest="all_tasks",
@@ -225,7 +244,7 @@ if __name__ == "__main__":
             )
     parser.add_argument(
             "--dev", dest="dev",
-            action="store_true", default=_DEV,
+            action="store_true", default=DEV,
             help="read the mimic data in dev mode"
             )
 

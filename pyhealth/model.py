@@ -1,42 +1,27 @@
 import numpy as np
 
-from alt_gamenets import GAMENetNoProc
+from alt_gamenets import GAMENetNoHist, GAMENetNoProc
+from constants import (
+    DEVICE,
+    EPOCHS, LR, DECAY_WEIGHT, THRESH,
+    METRICS,
+    #REQUIRED_DL_KEYS,
+    DEFAULT_EXPERIMENT, BEST_MODEL_PATH
+)
 
 from pyhealth.models import RETAIN, GAMENet
 from pyhealth.trainer import Trainer
 
-# set the device to be the cuda gpu
-_DEVICE = "cuda"
-
-# hyperparameters for training
-_EPOCHS = 20
-#_LR = 0.0002
-_LR = 1e-3
-#_DECAY_WEIGHT = 0.85
-_DECAY_WEIGHT = 1e-5
-
-_THRESH = 0.5
-
-# metrics to track from training/evaluation
-_METRICS = [
-        "jaccard_samples", "accuracy", "hamming_loss",
-        "precision_samples", "recall_samples",
-        "pr_auc_samples", "f1_samples"
-]
-
-_REQUIRED_DL_KEYS = {'train', 'val', 'test'}
-
-_DEFAULT_EXPERIMENT = "drug_recommendation"
-
-_BEST_MODEL_PATH = "output/{}/best.ckpt"
-
 class ModelWrapper():
-    def __init__(self, mimic_sample, model=GAMENet, experiment=_DEFAULT_EXPERIMENT, device=_DEVICE, metrics=_METRICS, feature_keys = ["conditions", "procedures"]):
+    def __init__(self, mimic_sample, model=GAMENet, experiment=DEFAULT_EXPERIMENT, device=DEVICE, metrics=METRICS, feature_keys = ["conditions", "procedures"]):
         self.model_type = model
         self.experiment = experiment
 
         if self.model_type == GAMENet:
             print("making gamenet model")
+            self.model = model(mimic_sample)
+        elif self.model_type == GAMENetNoHist:
+            print("making gamenet model without hist...")
             self.model = model(mimic_sample)
         elif self.model_type == GAMENetNoProc:
             print("making gamenet model without procedures...")
@@ -72,11 +57,11 @@ class ModelWrapper():
         return self.experiment
 
     def load_best_model(self):
-        model_path = _BEST_MODEL_PATH.format(self.experiment)
+        model_path = BEST_MODEL_PATH.format(self.experiment)
         print("loading model from path... {}".format(model_path))
         self.trainer.load_ckpt(model_path)
 
-    def train_model(self, train_loader, val_loader, decay_weight=_DECAY_WEIGHT, learning_rate=_LR, epochs=_EPOCHS):
+    def train_model(self, train_loader, val_loader, decay_weight=DECAY_WEIGHT, learning_rate=LR, epochs=EPOCHS):
         self.trainer.train(
             train_dataloader = train_loader,
             val_dataloader = val_loader,
@@ -103,7 +88,7 @@ class ModelWrapper():
 
     def calc_avg_drugs_per_visit(self, test):
         _,y_hat,_ = self.inference(test)
-        y_hat = np.where(y_hat >= _THRESH, 1, 0)
+        y_hat = np.where(y_hat >= THRESH, 1, 0)
 
         num_drugs = 0
 
@@ -114,7 +99,7 @@ class ModelWrapper():
 
     def calc_ddi_rate(self, test, ddi_mat):
         _,y_hat,_ = self.inference(test)
-        y_hat = np.where(y_hat >= _THRESH, 1, 0)
+        y_hat = np.where(y_hat >= THRESH, 1, 0)
 
         all_cnt = 0
         ddi_cnt = 0

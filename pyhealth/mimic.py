@@ -1,39 +1,21 @@
 # import the drug tasks we have available
-from drug_rec_task import *
+#from drug_rec_task import *
+
+# import our constants
+from constants import (
+    DEV, DATA_DIR,
+    MIMIC_TABLES, MIMIC_CODE_MAP,
+    DRUG_REC_TN,
+    TN, TTASK,
+    MIMIC4_TASKS, MIMIC3_TASKS
+)
 
 # import pyhealth datasets and tasks
 from pyhealth.datasets import MIMIC4Dataset, MIMIC3Dataset
-from pyhealth.tasks import drug_recommendation_mimic4_fn, drug_recommendation_mimic3_fn
+#from pyhealth.tasks import drug_recommendation_mimic4_fn, drug_recommendation_mimic3_fn
 # import dataloader related functions
 from pyhealth.datasets.splitter import split_by_patient
 from pyhealth.datasets import split_by_patient, get_dataloader
-
-# information for the mimic data
-_DEV = False
-_DATA_DIR = "./hiddendata/extracted/{}/"
-_MIMIC_TABLES = ["diagnoses_icd", "procedures_icd", "prescriptions"]
-_MIMIC_CODE_MAP = {"NDC": ("ATC", {"target_kwargs": {"level": 3}})}
-
-# task ids
-_DRUG_REC_TN = "drug_recommendation"
-_NO_HIST_TN = "no_hist"
-_NO_PROC_TN = "no_proc"
-
-_ALL_TASKS = [_DRUG_REC_TN, _NO_HIST_TN, _NO_PROC_TN]
-
-# dictionary keys for the task dictionary
-_TN = "name"
-_TTASK = "task"
-
-# default task lists
-_MIMIC4_TASKS = {
-        _DRUG_REC_TN: drug_recommendation_mimic4_fn,
-        _NO_HIST_TN: drug_recommendation_mimic4_no_hist,
-        _NO_PROC_TN: drug_recommendation_mimic4_no_proc
-        }
-_MIMIC3_TASKS = {
-        _DRUG_REC_TN: drug_recommendation_mimic3_fn
-        }
 
 # data loaders for training and evaluation
 def get_dataloaders(mimic_sample):
@@ -53,34 +35,28 @@ class MIMIC3():
     def dataset():
         return MIMIC3Dataset
 
-    def task():
-        return drug_recommendation_mimic3_fn
-
     def root():
-        return _DATA_DIR.format(MIMIC3.dataname())
+        return DATA_DIR.format(MIMIC3.dataname())
 
     def dataname():
         return "mimic3"
 
     def all_tasks():
-        return _MIMIC3_TASKS
+        return MIMIC3_TASKS
 
 # dataclass for MIMIC4
 class MIMIC4():
     def dataset():
         return MIMIC4Dataset
 
-    def task():
-        return drug_recommendation_mimic4_fn
-
     def root():
-        return _DATA_DIR.format(MIMIC4.dataname())
+        return DATA_DIR.format(MIMIC4.dataname())
 
     def dataname():
         return "mimic4"
 
     def all_tasks():
-        return _MIMIC4_TASKS
+        return MIMIC4_TASKS
 
 class MIMICWrapper():
     def __init__(self, datasource=MIMIC4, tasks=MIMIC4.all_tasks()):
@@ -95,9 +71,9 @@ class MIMICWrapper():
 
         for taskname,task in self.tasks.items():
             #self.tasknames.append(taskname)
-            self.tasklist.append({_TTASK: task, _TN: taskname})
+            self.tasklist.append({TTASK: task, TN: taskname})
 
-    def load_data(self, dev=_DEV):
+    def load_data(self, dev=DEV):
         dataset = self.data_source.dataset()
         dataroot = self.data_source.root()
 
@@ -108,8 +84,8 @@ class MIMICWrapper():
 
         self.mimic = dataset(
             root=self.root,
-            tables=_MIMIC_TABLES,
-            code_mapping=_MIMIC_CODE_MAP,
+            tables=MIMIC_TABLES,
+            code_mapping=MIMIC_CODE_MAP,
             dev=dev
             )
 
@@ -131,8 +107,8 @@ class MIMICWrapper():
         return self.tasklist
 
     def run_task(self, task):
-        print("***run task: {}".format(task[_TN]))
-        mimic_sample = self.mimic.set_task(task[_TTASK])
+        print("***run task: {}".format(task[TN]))
+        mimic_sample = self.mimic.set_task(task[TTASK])
         print(mimic_sample[0])
 
         return mimic_sample
@@ -140,14 +116,14 @@ class MIMICWrapper():
     def run_tasks_from_list(self, tasklist):
         self.prepared_data = {}
         for task in tasklist:
-            self.prepared_data[task[_TN]] = self.run_task(task)
+            self.prepared_data[task[TN]] = self.run_task(task)
 
     def drug_task_data(self):
         #self.run_default_tasks()
         self.run_tasks_from_list(self.tasklist)
         return self.prepared_data
 
-    def get_drug_task_results(self, name=_DRUG_REC_TN):
+    def get_drug_task_results(self, name=DRUG_REC_TN):
         return self.prepared_data[name]
 
     def create_dataloaders(self):
