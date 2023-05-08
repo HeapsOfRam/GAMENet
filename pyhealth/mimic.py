@@ -57,6 +57,7 @@ class MIMIC4():
 
 class MIMICWrapper():
     def __init__(self, datasource=MIMIC4, tasks=MIMIC4.all_tasks()):
+        # get the datasource characteristics, such as where to read the data from
         self.data_source = datasource
         self.root = datasource.root()
         self.dataname = datasource.dataname()
@@ -65,6 +66,7 @@ class MIMICWrapper():
         self.tasklist = []
         self.prepared_data = {}
 
+        # create tasklist that we will run when preparing the data
         for taskname,task in self.tasks.items():
             self.tasklist.append({TTASK: task, TN: taskname})
 
@@ -113,7 +115,6 @@ class MIMICWrapper():
             self.prepared_data[task[TN]] = self.run_task(task)
 
     def drug_task_data(self):
-        #self.run_default_tasks()
         self.run_tasks_from_list(self.tasklist)
         return self.prepared_data
 

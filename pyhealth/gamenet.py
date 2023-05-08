@@ -111,7 +111,7 @@ def main(args):
             print("--eval retain on {} data--".format(taskname))
             test_loader = dataloaders[taskname]["test"]
             baseline_result[taskname] = {}
-            baseline_result[taskname][SCORE_KEY] = retain[taskname].evaluate_model(test_loader)
+            baseline_result[taskname] = retain[taskname].evaluate_model(test_loader)
             baseline_result[taskname][DPV_KEY] = retain[taskname].calc_avg_drugs_per_visit(test_loader)
             baseline_result[taskname][DDI_RATE_KEY] = retain[taskname].calc_ddi_rate(
                 test_loader, ddi_mats[taskname]
@@ -142,7 +142,7 @@ def main(args):
             print("--eval gamenet on {} data--".format(taskname))
             test_loader = dataloaders[taskname]["test"]
             gamenet_result[taskname] = {}
-            gamenet_result[taskname][SCORE_KEY] = gamenet[taskname].evaluate_model(test_loader)
+            gamenet_result[taskname] = gamenet[taskname].evaluate_model(test_loader)
             gamenet_result[taskname][DPV_KEY] = gamenet[taskname].calc_avg_drugs_per_visit(test_loader)
             gamenet_result[taskname][DDI_RATE_KEY] = gamenet[taskname].calc_ddi_rate(
                 test_loader, ddi_mats[taskname]
@@ -156,7 +156,7 @@ def main(args):
         print("---baseline---\n")
         for taskname in mimic.get_task_names():
             print("--result for experiment {}--".format(retain[taskname].get_experiment_name()))
-            print(baseline_result[taskname][SCORE_KEY])
+            print(baseline_result[taskname])
 
             test_loader = dataloaders[taskname]["test"]
             print("retain training took...{} seconds".format(retain[taskname].get_train_time()))
@@ -170,7 +170,7 @@ def main(args):
         print("---gamenet---\n")
         for taskname in mimic.get_task_names():
             print("--result for experiment {}--".format(gamenet[taskname].get_experiment_name()))
-            print(gamenet_result[taskname][SCORE_KEY])
+            print(gamenet_result[taskname])
 
             test_loader = dataloaders[taskname]["test"]
             print("gamenet training took...{} seconds".format(gamenet[taskname].get_train_time()))

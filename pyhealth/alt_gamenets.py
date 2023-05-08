@@ -10,6 +10,8 @@ from pyhealth.models import BaseModel, GAMENetLayer, GAMENet
 from pyhealth.models.gamenet import GCN, GCNLayer
 from pyhealth.models.utils import get_last_visit, batch_to_multihot
 
+# gamenet layer without the dynamic memory component
+# used for the NoHist ablation (no history)
 class GAMENetLayerNoDM(GAMENetLayer):
     """GAMENet layer.
     Paper: Junyuan Shang et al. GAMENet: Graph Augmented MEmory Networks for
@@ -29,7 +31,7 @@ class GAMENetLayerNoDM(GAMENetLayer):
         >>> ehr_adj = torch.randint(0, 2, (50, 50)).float()
         >>> ddi_adj = torch.randint(0, 2, (50, 50)).float()
         >>> layer = GAMENetLayer(32, ehr_adj, ddi_adj)
-        >>> loss, y_prob = layer(queries, prev_drugs, curr_drugs)
+        >>> loss, y_prob = layer(queries, curr_drugs)
         >>> loss.shape
         torch.Size([])
         >>> y_prob.shape
@@ -64,8 +66,6 @@ class GAMENetLayerNoDM(GAMENetLayer):
         """Forward propagation.
         Args:
             queries: query tensor of shape [patient, visit, hidden_size].
-            prev_drugs: multihot tensor indicating drug usage in all previous
-                visits of shape [patient, visit - 1, num_drugs].
             curr_drugs: multihot tensor indicating drug usage in the current
                 visit of shape [patient, num_drugs].
             mask: an optional mask tensor of shape [patient, visit] where 1
@@ -98,6 +98,9 @@ class GAMENetLayerNoDM(GAMENetLayer):
 
         return loss, y_prob
 
+
+# gamenet variant for the NoHist ablation (no history)
+# uses the gamenet layer without dynamic memory
 class GAMENetNoHist(GAMENet):
     """GAMENet model.
     Paper: Junyuan Shang et al. GAMENet: Graph Augmented MEmory Networks for
@@ -270,13 +273,15 @@ class GAMENetNoHist(GAMENet):
         # process drugs
         loss, y_prob = self.gamenet(queries, curr_drugs, mask)
 
-
         return {
             "loss": loss,
             "y_prob": y_prob,
             "y_true": curr_drugs,
         }
 
+
+# gamenet variant for NoProc ablation (no procedures)
+# removes the GRU for procedures
 class GAMENetNoProc(GAMENet):
     """GAMENet model.
 
@@ -397,7 +402,6 @@ class GAMENetNoProc(GAMENet):
         Args:
             conditions: a nested list in three levels [patient, visit, condition].
             drugs_all: a nested list in three levels [patient, visit, drug].
-
         Returns:
             A dictionary with the following keys:
                 loss: a scalar tensor representing the loss.

@@ -85,7 +85,7 @@ All of these flags have default values and do not have to be manually provided.
 ### EDA Notebook
 
 I've written a notebook showing how to load in the data and train/evaluate some models based on my main logic [in EDA.ipynb](./EDA.ipynb).
-I plan to update this a bit, but an [old version](https://github.com/HeapsOfRam/GAMENet/blob/5fbb96e549e5aaf9ec2e4ffeef1bff06d0589e67/pyhealth/EDA.ipynb) gave the version of the results I ended up using in my report.
+See [this old version](https://github.com/HeapsOfRam/GAMENet/blob/5fbb96e549e5aaf9ec2e4ffeef1bff06d0589e67/pyhealth/EDA.ipynb) which provided the results I ended up using in my report.
 
 ### Cleanup
 
@@ -103,6 +103,12 @@ rm -r output/
 Finally, sometimes it is helpful to clean up the podman environment.
 For some reason, I need to force some resources to stop before I am able to `prune` to free up all resources.
 These commands have been organized in the [`cleanup.sh` script](./cleanup.sh).
+
+## Video
+
+I recorded a brief video for this assignment as well.
+The video goes over the purpose and implementation of GAMENet, as well as some of the results of my reproduction study.
+That video [can be viewed on YouTube here](https://youtu.be/6ZBUOQaIBhQ).
 
 ## Cite 
 
