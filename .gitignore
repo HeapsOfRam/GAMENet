@@ -120,3 +120,5 @@ runlogs/
 ignore/
 bak/
 bakout/
+
+.v2/

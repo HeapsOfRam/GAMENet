@@ -1,167 +1,185 @@
+# import regular python libraries
 import argparse
+import sys
+import numpy as np
 
-# import pyhealth
+# import utilities and variables from the mimic abstractions
+from mimic import MIMIC3, MIMIC4, MIMICWrapper
+
+# import model wrapper and variables
+from model import ModelWrapper
+
+# import alternative gamenet models
+from alt_gamenets import GAMENetNoProc
+
+# import our constants
+from constants import (
+    DEV,
+    EPOCHS, LR, DECAY_WEIGHT,
+    DRUG_REC_TN, ALL_TASKS,
+    GN_KEY, RT_KEY,
+    MODEL_TYPES_PER_TASK, RETAIN_FEATS_PER_TASK,
+    GAMENET_EXP, RETAIN_EXP,
+    SCORE_KEY, DPV_KEY, DDI_RATE_KEY,
+    BASE_DDI_RATE
+)
+
+# pyhealth imports
 import pyhealth
-# import mimic4 dataset and drug recommendaton task
-from pyhealth.datasets import MIMIC4Dataset, MIMIC3Dataset
-from pyhealth.tasks import drug_recommendation_mimic4_fn, drug_recommendation_mimic3_fn
-# import dataloader related functions
-from pyhealth.datasets.splitter import split_by_patient
-from pyhealth.datasets import split_by_patient, get_dataloader
-# import gamenet model
 from pyhealth.models import RETAIN, GAMENet
-# import trainer
 from pyhealth.trainer import Trainer
 
-# information for the mimic data
-_DEV = False
-_DATA_DIR = "./hiddendata/extracted/{}/"
-_MIMIC_TABLES = ["diagnoses_icd", "procedures_icd", "prescriptions"]
-_MIMIC_CODE_MAP = {"NDC": ("ATC", {"target_kwargs": {"level": 3}})}
+def print_ddi_results(model, result):
+    exp = model.get_experiment_name()
+    print("{} model recommended an average of {} drugs / visit".format(exp, result[DPV_KEY]))
+    print("{} model ddi rate: {}".format(exp, result[DDI_RATE_KEY]))
+    print("{} model delta ddi rate: {}".format(exp, result[DDI_RATE_KEY] - BASE_DDI_RATE))
+    print("\n{}\n".format("-" * 10))
 
-# experiment names
-_GAMENET_EXP = "drug_recommendation_gamenet"
-_RETAIN_EXP = "drug_recommendation_retain"
+def main(args):
+    # choose dataset
+    if args.mimicvers == 4:
+        mimic_dataset = MIMIC4
+    elif args.mimicvers == 3:
+        mimic_dataset = MIMIC3
 
-# set the device to be the cuda gpu
-_DEVICE = "cuda"
+    # create the task list we want to run
+    tasks = {}
+    if args.all_tasks:
+        print("---RUNNING ALL TASKS!!!---")
+        tasks = mimic_dataset.all_tasks()
+    else:
+        tasklist = args.tasks
 
-# hyperparameters for training
-_EPOCHS = 20
-#_LR = 0.0002
-_LR = 1e-3
-#_DECAY_WEIGHT = 0.85
-_DECAY_WEIGHT = 1e-5
+        if not(tasklist):
+            print("--NO TASK PROVIDED, RUNNING DEFAULT!--")
+            tasklist = [DRUG_REC_TN]
 
-# metrics to track from training/evaluation
-_METRICS = [
-        "jaccard_samples", "accuracy", "hamming_loss",
-        "precision_samples", "recall_samples",
-        "pr_auc_samples", "f1_samples"
-]
+        for task in tasklist:
+            print(task)
+            tasks[task] = mimic_dataset.all_tasks()[task]
 
-# define data classes
-## these classes wrap some pyhealth logic that is similar between the two datasets
-## enables easy switching between MIMIC4/MIMIC3 data
 
-# dataclass for MIMIC3
-class MIMIC3():
-    def dataset():
-        return MIMIC3Dataset
+    print("---will run tasks {}---".format(tasks.keys()))
 
-    def task():
-        return drug_recommendation_mimic3_fn
+    # create mimicwrapper object
+    # then, load the data and run the desired tasks on it
+    # finally, create the dataloaders we need
+    mimic = MIMICWrapper(datasource=mimic_dataset, tasks=tasks)
+    mimicdata = mimic.load_data(args.dev)
+    drug_task_data = mimic.drug_task_data()
+    dataloaders = mimic.create_dataloaders()
 
-    def root():
-        return _DATA_DIR.format(MIMIC3.dataname())
+    # create dictionaries for our resulting models, trainers, and results
+    models = {}
 
-    def dataname():
-        return "mimic3"
+    retain = {}
+    gamenet = {}
 
-# dataclass for MIMIC4
-class MIMIC4():
-    def dataset():
-        return MIMIC4Dataset
+    baseline_result = {}
+    gamenet_result = {}
 
-    def task():
-        return drug_recommendation_mimic4_fn
+    ddi_mats = {}
 
-    def root():
-        return _DATA_DIR.format(MIMIC4.dataname())
+    # create ddi matrices for calculating ddi metrics
+    # also, create our runtime dicts
+    for taskname in mimic.get_task_names():
+        model_type = MODEL_TYPES_PER_TASK[taskname][GN_KEY]
+        ddi_mats[taskname] = model_type(drug_task_data[taskname]).generate_ddi_adj()
 
-    def dataname():
-        return "mimic4"
-
-# data preparation
-def prepare_drug_task_data(data_source=MIMIC4):
-    dataset = data_source.dataset()
-    task = data_source.task()
-    dataroot = data_source.root()
-
-    print("reading {} data...".format(data_source.dataname()))
-
-    mimic = dataset(
-            root=dataroot,
-            tables=_MIMIC_TABLES,
-            code_mapping=_MIMIC_CODE_MAP,
-            dev=_DEV
+    # baseline
+    if args.baseline:
+        print("---RETAIN TRAINING---")
+        for taskname,dataloader in dataloaders.items():
+            print("--training retain on {} data--".format(taskname))
+            # create and train retain model
+            retain[taskname] = ModelWrapper(
+                    drug_task_data[taskname],
+                    model=MODEL_TYPES_PER_TASK[taskname][RT_KEY],
+                    feature_keys=RETAIN_FEATS_PER_TASK[taskname],
+                    experiment="{}_task_{}".format(RETAIN_EXP, taskname)
+            )
+            retain[taskname].train_model(
+                    dataloader["train"], dataloader["val"],
+                    decay_weight=args.decay,
+                    learning_rate=args.rate,
+                    epochs=args.epochs
             )
 
-    print("stat")
-    mimic.stat()
-    print("info")
-    mimic.info()
+        print("---RETAIN EVALUATION---")
+        for taskname in mimic.get_task_names():
+            print("--eval retain on {} data--".format(taskname))
+            test_loader = dataloaders[taskname]["test"]
+            baseline_result[taskname] = {}
+            baseline_result[taskname] = retain[taskname].evaluate_model(test_loader)
+            baseline_result[taskname][DPV_KEY] = retain[taskname].calc_avg_drugs_per_visit(test_loader)
+            baseline_result[taskname][DDI_RATE_KEY] = retain[taskname].calc_ddi_rate(
+                test_loader, ddi_mats[taskname]
+            )
+    else:
+        print("---SKIPPING BASELINE---")
 
-    mimic_sample = mimic.set_task(task)
-    print(mimic_sample[0])
-
-    return mimic_sample
-
-# data loaders for training and evaluation
-def get_dataloaders(mimic_sample):
-    train_dataset, val_dataset, test_dataset = split_by_patient(mimic_sample, [0.8, 0.1, 0.1])
-    train_loader = get_dataloader(train_dataset, batch_size=64, shuffle=True)
-    val_loader = get_dataloader(val_dataset, batch_size=64, shuffle=False)
-    test_loader = get_dataloader(test_dataset, batch_size=64, shuffle=False)
-
-    return train_loader, val_loader, test_loader
-
-# training step for the retain baseline model
-def train_retain(mimic_sample, train_loader, val_loader, epochs=_EPOCHS, decay_weight=_DECAY_WEIGHT, learning_rate=_LR, experiment=_RETAIN_EXP, device=_DEVICE):
-    model = RETAIN(
-            mimic_sample,
-            feature_keys = ["conditions", "procedures"],
-            label_key = "drugs",
-            mode = "multilabel"
+    # gamenet
+    if args.gamenet:
+        print("---GAMENET TRAINING---")
+        for taskname,dataloader in dataloaders.items():
+            print("--training gamenet on {} data--".format(taskname))
+            # create and train gamenet model
+            gamenet[taskname] = ModelWrapper(
+                drug_task_data[taskname],
+                model=MODEL_TYPES_PER_TASK[taskname][GN_KEY],
+                experiment="{}_task_{}".format(GAMENET_EXP, taskname)
+            )
+            gamenet[taskname].train_model(
+                dataloader["train"], dataloader["val"],
+                decay_weight = args.decay,
+                learning_rate = args.rate,
+                epochs=args.epochs
             )
 
-    trainer = Trainer(
-            model = model,
-            metrics = _METRICS,
-            device = device,
-            exp_name = experiment
+        print("---GAMENET EVALUATION---")
+        for taskname in mimic.get_task_names():
+            print("--eval gamenet on {} data--".format(taskname))
+            test_loader = dataloaders[taskname]["test"]
+            gamenet_result[taskname] = {}
+            gamenet_result[taskname] = gamenet[taskname].evaluate_model(test_loader)
+            gamenet_result[taskname][DPV_KEY] = gamenet[taskname].calc_avg_drugs_per_visit(test_loader)
+            gamenet_result[taskname][DDI_RATE_KEY] = gamenet[taskname].calc_ddi_rate(
+                test_loader, ddi_mats[taskname]
             )
+    else:
+        print("---SKIPPING GAMENET---")
 
-    trainer.train(
-            train_dataloader = train_loader,
-            val_dataloader = val_loader,
-            epochs = epochs,
-            monitor = "accuracy",
-            monitor_criterion = "max",
-            weight_decay = decay_weight,
-            optimizer_params = {"lr": learning_rate}
-            )
+    # print results
+    print("\n---RESULTS---\n\n")
+    if args.baseline:
+        print("---baseline---\n")
+        for taskname in mimic.get_task_names():
+            print("--result for experiment {}--".format(retain[taskname].get_experiment_name()))
+            print(baseline_result[taskname])
 
-    return model, trainer
+            test_loader = dataloaders[taskname]["test"]
+            print("retain training took...{} seconds".format(retain[taskname].get_train_time()))
+            print_ddi_results(retain[taskname], baseline_result[taskname])
+    else:
+        print("...BASELINE SKIPPED, NO BASELINE RESULTS...")
 
-# training step for the gamenet model
-def train_gamenet(mimic_sample, train_loader, val_loader, epochs=_EPOCHS, decay_weight=_DECAY_WEIGHT, learning_rate=_LR, experiment=_GAMENET_EXP, device=_DEVICE):
-    gamenet = GAMENet(mimic_sample)
+    print("{}\n".format("*" * 10))
 
-    trainer = Trainer(
-        model = gamenet,
-        metrics = _METRICS,
-        device = device,
-        exp_name = experiment
-    )
+    if args.gamenet:
+        print("---gamenet---\n")
+        for taskname in mimic.get_task_names():
+            print("--result for experiment {}--".format(gamenet[taskname].get_experiment_name()))
+            print(gamenet_result[taskname])
 
-    trainer.train(
-        train_dataloader = train_loader,
-        val_dataloader = val_loader,
-        epochs = epochs,
-        monitor = "accuracy",
-        monitor_criterion = "max",
-        weight_decay = decay_weight,
-        optimizer_params = {"lr": learning_rate}
-    )
+            test_loader = dataloaders[taskname]["test"]
+            print("gamenet training took...{} seconds".format(gamenet[taskname].get_train_time()))
+            print_ddi_results(gamenet[taskname], gamenet_result[taskname])
+    else:
+        print("...GAMENET SKIPPED, NO GAMENET RESULTS...")
 
-    return gamenet, trainer
+    print("EXECUTION FINISHED...")
 
-# function to evaluate the models
-def evaluate_model(trainer, test_loader):
-    result = trainer.evaluate(test_loader)
-    print(result)
-    return result
 
 if __name__ == "__main__":
     # first, define command line arguments
@@ -184,75 +202,37 @@ if __name__ == "__main__":
             )
     parser.add_argument(
             "-e", "--epochs", dest="epochs",
-            default=_EPOCHS, type=int,
+            default=EPOCHS, type=int,
             help="how many epochs to run the training for"
             )
     parser.add_argument(
             "-d", "--decay-weight", dest="decay",
-            default=_DECAY_WEIGHT, type=float,
+            default=DECAY_WEIGHT, type=float,
             help="value for the decay weight hyperparameter"
             )
     parser.add_argument(
             "-l", "--learning-rate", dest="rate",
-            default=_LR, type=float,
+            default=LR, type=float,
             help="value for the learning weight hyperparameter"
+            )
+    parser.add_argument(
+            "-t", "--task", dest="tasks",
+            action="extend", nargs="+", type=str,
+            choices=ALL_TASKS,
+            #default=[DRUG_REC_TN],
+            default=[],
+            help="add a task to the list of tasks to be evaluated; options are {}".format(ALL_TASKS)
+            )
+    parser.add_argument(
+            "-a", "--all-tasks", dest="all_tasks",
+            action="store_true", default=False,
+            help="will evaluate all the possible tasks on the dataset; supersedes -t argument"
+            )
+    parser.add_argument(
+            "--dev", dest="dev",
+            action="store_true", default=DEV,
+            help="read the mimic data in dev mode"
             )
 
     args = parser.parse_args()
-
-    # choose dataset
-    if args.mimicvers == 4:
-        mimic_dataset = MIMIC4
-    elif args.mimicvers == 3:
-        mimic_dataset = MIMIC3
-
-    # load and prepare data
-    data = prepare_drug_task_data(mimic_dataset)
-    # create the dataloaders
-    train_loader, val_loader, test_loader = get_dataloaders(data)
-
-    # train the models
-    baseline_result = None
-    gamenet_result = None
-
-    # baseline
-    if args.baseline:
-        print("---RETAIN TRAINING---")
-        retain, retain_trainer = train_retain(
-                data, train_loader, val_loader,
-                epochs=args.epochs,
-                decay_weight=args.decay,
-                learning_rate=args.rate
-                )
-        print("---RETAIN EVALUATION---")
-        baseline_result = evaluate_model(retain_trainer, test_loader)
-
-    # gamenet
-    if args.gamenet:
-        print("---GAMENET TRAINING---")
-        gamenet, gn_trainer = train_gamenet(
-                data, train_loader, val_loader,
-                epochs=args.epochs,
-                decay_weight=args.decay,
-                learning_rate=args.rate
-                )
-        print("---GAMENET EVALUATION---")
-        #gn_result = evaluate_model(gn_trainer, test_loader)
-        gamenet_result = evaluate_model(gn_trainer, test_loader)
-
-    print("---RESULTS---")
-    print("---baseline---")
-    print(baseline_result)
-    print("---gamenet---")
-    print(gamenet_result)
-
-
-    #print("---GAMENET TRAINING---")
-    #gamenet, gn_trainer = train_gamenet(data, train_loader, val_loader)
-    #print("---RETAIN TRAINING---")
-    #retain, retain_trainer = train_retain(data, train_loader, val_loader)
-    ## evaluate model performance
-    #print("---GAMENET EVALUATION---")
-    ##gn_result = evaluate_model(gn_trainer, test_loader)
-    #print("---RETAIN EVALUATION---")
-    #retain_result = evaluate_model(retain_trainer, test_loader)
+    main(args)

@@ -1,0 +1,129 @@
+---RUNNING ALL TASKS!!!---
+---will run tasks dict_keys(['drug_recommendation', 'no_hist', 'no_proc'])---
+reading mimic4 data...
+---DATA STATS FOR mimic4 DATA---
+stat
+
+Statistics of base dataset (dev=False):
+	- Dataset: MIMIC4Dataset
+	- Number of patients: 180733
+	- Number of visits: 431231
+	- Number of visits per patient: 2.3860
+	- Number of events per visit in diagnoses_icd: 11.0296
+	- Number of events per visit in procedures_icd: 1.5518
+	- Number of events per visit in prescriptions: 54.2354
+
+info
+
+dataset.patients: patient_id -> <Patient>
+
+<Patient>
+    - visits: visit_id -> <Visit> 
+    - other patient-level info
+    
+    <Visit>
+        - event_list_dict: table_name -> List[Event]
+        - other visit-level info
+    
+        <Event>
+            - code: str
+            - other event-level info
+
+***run task: drug_recommendation
+{'visit_id': '22595853', 'patient_id': '10000032', 'conditions': [['5723', '78959', '5715', '07070', '496', '29680', '30981', 'V1582']], 'procedures': [['5491']], 'drugs': ['B01A', 'J07B', 'A12B', 'C03D', 'C03C', 'N02B', 'J05A', 'R03A', 'N07B', 'R03B'], 'drugs_all': [['B01A', 'J07B', 'A12B', 'C03D', 'C03C', 'N02B', 'J05A', 'R03A', 'N07B', 'R03B']]}
+***run task: no_hist
+{'visit_id': '22595853', 'patient_id': '10000032', 'conditions': [['5723', '78959', '5715', '07070', '496', '29680', '30981', 'V1582']], 'procedures': [['5491']], 'drugs': ['B01A', 'J07B', 'A12B', 'C03D', 'C03C', 'N02B', 'J05A', 'R03A', 'N07B', 'R03B'], 'drugs_all': [['B01A', 'J07B', 'A12B', 'C03D', 'C03C', 'N02B', 'J05A', 'R03A', 'N07B', 'R03B']]}
+***run task: no_proc
+{'visit_id': '22595853', 'patient_id': '10000032', 'conditions': [['5723', '78959', '5715', '07070', '496', '29680', '30981', 'V1582']], 'drugs': ['B01A', 'J07B', 'A12B', 'C03D', 'C03C', 'N02B', 'J05A', 'R03A', 'N07B', 'R03B'], 'drugs_all': [['B01A', 'J07B', 'A12B', 'C03D', 'C03C', 'N02B', 'J05A', 'R03A', 'N07B', 'R03B']]}
+---RETAIN TRAINING---
+--training retain on drug_recommendation data--
+making retain model
+--training retain on no_hist data--
+making retain model
+--training retain on no_proc data--
+making retain model
+---RETAIN EVALUATION---
+--eval retain on drug_recommendation data--
+{'jaccard_samples': 0.44864697998221753, 'accuracy': 0.002188782489740082, 'hamming_loss': 0.0772469220246238, 'precision_samples': 0.7732964735408931, 'recall_samples': 0.5294207568055168, 'pr_auc_samples': 0.7536898511368888, 'f1_samples': 0.5999584486536846, 'loss': 0.1878946758644029}
+--eval retain on no_hist data--
+{'jaccard_samples': 0.4400033901879781, 'accuracy': 0.0021819173598799945, 'hamming_loss': 0.07890733669712259, 'precision_samples': 0.7661146143239237, 'recall_samples': 0.5201608030805733, 'pr_auc_samples': 0.7454372976040975, 'f1_samples': 0.5916364325617162, 'loss': 0.19218841182148974}
+--eval retain on no_proc data--
+{'jaccard_samples': 0.3967331893353899, 'accuracy': 0.0008716495968620615, 'hamming_loss': 0.07365384886419937, 'precision_samples': 0.7523696340217492, 'recall_samples': 0.47131816111815983, 'pr_auc_samples': 0.7087006928780083, 'f1_samples': 0.5504423137696375, 'loss': 0.18317566653000505}
+---GAMENET TRAINING---
+--training gamenet on drug_recommendation data--
+making gamenet model
+--training gamenet on no_hist data--
+making gamenet model without hist...
+--training gamenet on no_proc data--
+making gamenet model without procedures...
+---GAMENET EVALUATION---
+--eval gamenet on drug_recommendation data--
+{'jaccard_samples': 0.45003063492036427, 'accuracy': 0.0023939808481532147, 'hamming_loss': 0.08032865937072503, 'precision_samples': 0.744452102091013, 'recall_samples': 0.5504923014375089, 'pr_auc_samples': 0.7441637717035946, 'f1_samples': 0.6011508041319775, 'loss': 0.19465859078163664}
+--eval gamenet on no_hist data--
+{'jaccard_samples': 0.4559319150838047, 'accuracy': 0.0029319514523387428, 'hamming_loss': 0.08260500477294422, 'precision_samples': 0.7420325102152273, 'recall_samples': 0.565054423262254, 'pr_auc_samples': 0.7403696504290009, 'f1_samples': 0.6056971069785443, 'loss': 0.22605375660502391}
+--eval gamenet on no_proc data--
+{'jaccard_samples': 0.41270763360349055, 'accuracy': 0.001016924529672405, 'hamming_loss': 0.07287922991275915, 'precision_samples': 0.7521642754137261, 'recall_samples': 0.4956870072651649, 'pr_auc_samples': 0.7202144428279985, 'f1_samples': 0.5658242897677868, 'loss': 0.1805885818953304}
+---RESULTS---
+
+
+---baseline---
+
+--result for experiment drug_recommendation_retain_task_drug_recommendation--
+{'jaccard_samples': 0.44864697998221753, 'accuracy': 0.002188782489740082, 'hamming_loss': 0.0772469220246238, 'precision_samples': 0.7732964735408931, 'recall_samples': 0.5294207568055168, 'pr_auc_samples': 0.7536898511368888, 'f1_samples': 0.5999584486536846, 'loss': 0.1878946758644029}
+training took...1721.88416 seconds
+drug_recommendation_retain_task_drug_recommendation model recommended an average of 15.273939808481533 drugs / visit
+drug_recommendation_retain_task_drug_recommendation model ddi rate: 0.06457412200553785
+drug_recommendation_retain_task_drug_recommendation model delta ddi rate: -0.01312587799446216
+
+----------
+
+--result for experiment drug_recommendation_retain_task_no_hist--
+{'jaccard_samples': 0.4400033901879781, 'accuracy': 0.0021819173598799945, 'hamming_loss': 0.07890733669712259, 'precision_samples': 0.7661146143239237, 'recall_samples': 0.5201608030805733, 'pr_auc_samples': 0.7454372976040975, 'f1_samples': 0.5916364325617162, 'loss': 0.19218841182148974}
+training took...938.16663 seconds
+drug_recommendation_retain_task_no_hist model recommended an average of 15.048684031092323 drugs / visit
+drug_recommendation_retain_task_no_hist model ddi rate: 0.0665714654532546
+drug_recommendation_retain_task_no_hist model delta ddi rate: -0.011128534546745408
+
+----------
+
+--result for experiment drug_recommendation_retain_task_no_proc--
+{'jaccard_samples': 0.3967331893353899, 'accuracy': 0.0008716495968620615, 'hamming_loss': 0.07365384886419937, 'precision_samples': 0.7523696340217492, 'recall_samples': 0.47131816111815983, 'pr_auc_samples': 0.7087006928780083, 'f1_samples': 0.5504423137696375, 'loss': 0.18317566653000505}
+training took...1927.7016 seconds
+drug_recommendation_retain_task_no_proc model recommended an average of 11.941308927144622 drugs / visit
+drug_recommendation_retain_task_no_proc model ddi rate: 0.0807693831139519
+drug_recommendation_retain_task_no_proc model delta ddi rate: 0.0030693831139518984
+
+----------
+
+**********
+
+---gamenet---
+
+--result for experiment drug_recommendation_gamenet_task_drug_recommendation--
+{'jaccard_samples': 0.45003063492036427, 'accuracy': 0.0023939808481532147, 'hamming_loss': 0.08032865937072503, 'precision_samples': 0.744452102091013, 'recall_samples': 0.5504923014375089, 'pr_auc_samples': 0.7441637717035946, 'f1_samples': 0.6011508041319775, 'loss': 0.19465859078163664}
+training took...1694.474593 seconds
+drug_recommendation_gamenet_task_drug_recommendation model recommended an average of 17.162243502051982 drugs / visit
+drug_recommendation_gamenet_task_drug_recommendation model ddi rate: 0.0625411773967044
+drug_recommendation_gamenet_task_drug_recommendation model delta ddi rate: -0.01515882260329561
+
+----------
+
+--result for experiment drug_recommendation_gamenet_task_no_hist--
+{'jaccard_samples': 0.4559319150838047, 'accuracy': 0.0029319514523387428, 'hamming_loss': 0.08260500477294422, 'precision_samples': 0.7420325102152273, 'recall_samples': 0.565054423262254, 'pr_auc_samples': 0.7403696504290009, 'f1_samples': 0.6056971069785443, 'loss': 0.22605375660502391}
+training took...949.57852 seconds
+drug_recommendation_gamenet_task_no_hist model recommended an average of 18.134324287467614 drugs / visit
+drug_recommendation_gamenet_task_no_hist model ddi rate: 0.06071486924525258
+drug_recommendation_gamenet_task_no_hist model delta ddi rate: -0.016985130754747425
+
+----------
+
+--result for experiment drug_recommendation_gamenet_task_no_proc--
+{'jaccard_samples': 0.41270763360349055, 'accuracy': 0.001016924529672405, 'hamming_loss': 0.07287922991275915, 'precision_samples': 0.7521642754137261, 'recall_samples': 0.4956870072651649, 'pr_auc_samples': 0.7202144428279985, 'f1_samples': 0.5658242897677868, 'loss': 0.1805885818953304}
+training took...2773.231464 seconds
+drug_recommendation_gamenet_task_no_proc model recommended an average of 13.13637684317571 drugs / visit
+drug_recommendation_gamenet_task_no_proc model ddi rate: 0.07194733594990876
+drug_recommendation_gamenet_task_no_proc model delta ddi rate: -0.005752664050091241
+
+----------
+
+EXECUTION FINISHED...

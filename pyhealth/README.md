@@ -63,7 +63,7 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 # then, simply run the script
-python3 gamenet.py
+python gamenet.py
 ```
 
 #### Flags
@@ -76,14 +76,39 @@ python3 gamenet.py
  - `-e`, `--epochs`: number of epochs to run training for (for both baseline and GAMENet models). The default is `20`
  - `-d`, `--decay-weight`: sets the decay weight for training (for both baseline and GAMENet models). The default is `1e-5`
  - `-l`, `--learning-rate`: sets the learning rate for training (for both baseline and GAMENet models). The default is `1e-3`
+ - `-t`, `--task`: adds a task to the list of tasks to be valuated (for both baseline and GAMENet models). This primarily focuses around data preparation tasks. Right now, just three tasks are allowed: `"drug_recommendation"`, `"no_hist"`, and `"no_proc"`. `"no_hist"` prepares the data without accounting for the patient's history, `"no_proc"` prepares the data (and the models) without accounting for any procedure codes, and `"drug_recommendation"` is the default pyhealth-provided task. `"no_hist"` and `"no_proc"` are currently only supported for MIMIC4 data. This argument can be passed multiple times, with different tasks as input
+ - `-a`, `--all-tasks`: passing this argument will run all of the available tasks for the given dataset (either MIMIC3 or MIMIC4). This argument supersedes the `-t` argument
+ - `--dev`: whether to read the MIMIC data in "dev" mode. This reads only in samples of the MIMIC data, making evaluation much quicker -- however, the results will not be quite as accurate
 
 All of these flags have default values and do not have to be manually provided.
 
+### EDA Notebook
+
+I've written a notebook showing how to load in the data and train/evaluate some models based on my main logic [in EDA.ipynb](./EDA.ipynb).
+See [this old version](https://github.com/HeapsOfRam/GAMENet/blob/5fbb96e549e5aaf9ec2e4ffeef1bff06d0589e67/pyhealth/EDA.ipynb) which provided the results I ended up using in my report.
+
 ### Cleanup
+
+#### Local
+
+It can be helpful to remove the previous models before a run.
+For this, can simply run:
+
+```sh
+rm -r output/
+```
+
+#### Podman
 
 Finally, sometimes it is helpful to clean up the podman environment.
 For some reason, I need to force some resources to stop before I am able to `prune` to free up all resources.
 These commands have been organized in the [`cleanup.sh` script](./cleanup.sh).
+
+## Video
+
+I recorded a brief video for this assignment as well.
+The video goes over the purpose and implementation of GAMENet, as well as some of the results of my reproduction study.
+That video [can be viewed on YouTube here](https://youtu.be/6ZBUOQaIBhQ).
 
 ## Cite 
 
@@ -97,4 +122,3 @@ The authors have asked to cite their paper when using their work:
   year={2018}
 }
 ```
-

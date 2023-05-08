@@ -1,0 +1,13 @@
+---RESULTS---
+---baseline---
+--result for task drug_recommendation--
+{'jaccard_samples': 0.40008787882542685, 'accuracy': 0.0012916383412644459, 'hamming_loss': 0.08582596872875595, 'precision_samples': 0.7455360788498793, 'recall_samples': 0.47815869512589, 'pr_auc_samples': 0.7073622284562893, 'f1_samples': 0.5519420330965153, 'loss': 0.2175023591388827}
+--result for task no_hist--
+{'jaccard_samples': 0.4368202476385819, 'accuracy': 0.0018152621657473993, 'hamming_loss': 0.07877085806046219, 'precision_samples': 0.7751885393861495, 'recall_samples': 0.5120557635647681, 'pr_auc_samples': 0.7462469395076694, 'f1_samples': 0.5882173075017523, 'loss': 0.19199225033766457}
+---gamenet---
+--result for task drug_recommendation--
+{'jaccard_samples': 0.43182818294729325, 'accuracy': 0.0015635622025832767, 'hamming_loss': 0.08156356220258328, 'precision_samples': 0.7523843921556422, 'recall_samples': 0.5162429570814999, 'pr_auc_samples': 0.7351075114527458, 'f1_samples': 0.584579632980099, 'loss': 0.19691569805145265}
+--result for task no_hist--
+{'jaccard_samples': 0.45408681222842806, 'accuracy': 0.0025832576974097604, 'hamming_loss': 0.08273930042588844, 'precision_samples': 0.7418355713418497, 'recall_samples': 0.5635041549397755, 'pr_auc_samples': 0.7410396156636722, 'f1_samples': 0.6028606429923224, 'loss': 0.2202851798917566}
+EXECUTION FINISHED...
+

@@ -1,0 +1,24 @@
+---RESULTS---
+---baseline---
+--result for experiment drug_recommendation_retain_task_drug_recommendation--
+{'jaccard_samples': 0.4514614169358209, 'accuracy': 0.002093038957531564, 'hamming_loss': 0.0781658902167308, 'precision_samples': 0.7652514892757893, 'recall_samples': 0.5374962002713531, 'pr_auc_samples': 0.7535843459429372, 'f1_samples': 0.6034861040058528, 'loss': 0.19037514944271794}
+drug_recommendation_retain_task_drug_recommendation model recommended an average of 15.523394774154344 drugs / visit
+drug_recommendation_retain_task_drug_recommendation model ddi rate: 0.06607840132524581
+drug_recommendation_retain_task_drug_recommendation model delta ddi rate: -0.011621598674754194
+--result for experiment drug_recommendation_retain_task_no_hist--
+{'jaccard_samples': 0.44351092769219846, 'accuracy': 0.0026356693924444144, 'hamming_loss': 0.07908866662161249, 'precision_samples': 0.7670245149487581, 'recall_samples': 0.52559034018973, 'pr_auc_samples': 0.7484718254268212, 'f1_samples': 0.5946988958184319, 'loss': 0.1915360957641026}
+drug_recommendation_retain_task_no_hist model recommended an average of 15.830303439886464 drugs / visit
+drug_recommendation_retain_task_no_hist model ddi rate: 0.06193712547025385
+drug_recommendation_retain_task_no_hist model delta ddi rate: -0.015762874529746153
+---gamenet---
+--result for experiment drug_recommendation_gamenet_task_drug_recommendation--
+{'jaccard_samples': 0.4441723592462258, 'accuracy': 0.0016879346431706165, 'hamming_loss': 0.08317129160758896, 'precision_samples': 0.7393289886135622, 'recall_samples': 0.5486253858222112, 'pr_auc_samples': 0.7408549796059878, 'f1_samples': 0.5947677002734387, 'loss': 0.20289834286889125}
+drug_recommendation_gamenet_task_drug_recommendation model recommended an average of 17.6780771048545 drugs / visit
+drug_recommendation_gamenet_task_drug_recommendation model ddi rate: 0.060664263404938495
+drug_recommendation_gamenet_task_drug_recommendation model delta ddi rate: -0.01703573659506151
+--result for experiment drug_recommendation_gamenet_task_no_hist--
+{'jaccard_samples': 0.45763488937248853, 'accuracy': 0.0030411569912820167, 'hamming_loss': 0.08189430289923633, 'precision_samples': 0.7427681562886317, 'recall_samples': 0.5644344767728116, 'pr_auc_samples': 0.7471688010650523, 'f1_samples': 0.6075142938741463, 'loss': 0.20542351265662703}
+drug_recommendation_gamenet_task_no_hist model recommended an average of 18.12529566804082 drugs / visit
+drug_recommendation_gamenet_task_no_hist model ddi rate: 0.06068052110525843
+drug_recommendation_gamenet_task_no_hist model delta ddi rate: -0.017019478894741577
+EXECUTION FINISHED...

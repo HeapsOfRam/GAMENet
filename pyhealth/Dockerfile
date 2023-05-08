@@ -6,8 +6,7 @@ FROM nvidia/cuda:11.0.3-base-ubuntu20.04
 RUN apt-get update
 RUN apt-get install -y python3 python3-pip
 
-COPY gamenet.py /app/
-#COPY hiddendata/extracted/mimic4/ /app/hiddendata/extracted/mimic4/
+COPY *.py /app/
 COPY requirements.txt /app/
 
 WORKDIR /app/
