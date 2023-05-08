@@ -82,6 +82,11 @@ python gamenet.py
 
 All of these flags have default values and do not have to be manually provided.
 
+### EDA Notebook
+
+I've written a notebook showing how to load in the data and train/evaluate some models based on my main logic [in EDA.ipynb](./EDA.ipynb).
+I plan to update this a bit, but an [old version](https://github.com/HeapsOfRam/GAMENet/blob/5fbb96e549e5aaf9ec2e4ffeef1bff06d0589e67/pyhealth/EDA.ipynb) gave the version of the results I ended up using in my report.
+
 ### Cleanup
 
 #### Local
