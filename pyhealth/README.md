@@ -76,11 +76,31 @@ python gamenet.py
  - `-e`, `--epochs`: number of epochs to run training for (for both baseline and GAMENet models). The default is `20`
  - `-d`, `--decay-weight`: sets the decay weight for training (for both baseline and GAMENet models). The default is `1e-5`
  - `-l`, `--learning-rate`: sets the learning rate for training (for both baseline and GAMENet models). The default is `1e-3`
- - `-t`, `--task`: adds a task to the list of tasks to be valuated (for both baseline and GAMENet models). This primarily focuses around data preparation tasks. Right now, just three tasks are allowed: `"drug_recommendation"`, `"no_hist"`, and `"no_proc"`. `"no_hist"` prepares the data without accounting for the patient's history, `"no_proc"` prepares the data (and the models) without accounting for any procedure codes, and `"drug_recommendation"` is the default pyhealth-provided task. `"no_hist"` and `"no_proc"` are currently only supported for MIMIC4 data. This argument can be passed multiple times, with different tasks as input
+ - `-t`, `--task`: adds a task to the list of tasks to be valuated (for both baseline and GAMENet models). This changes the data preparation as well as some of the models run. Right now, just three tasks are allowed: `"drug_recommendation"`, `"no_hist"`, and `"no_proc"`. `"no_hist"` prepares the data without accounting for the patient's history, `"no_proc"` prepares the data (and the models) without accounting for any procedure codes, and `"drug_recommendation"` is the default pyhealth-provided task. `"no_hist"` and `"no_proc"` are currently only supported for MIMIC4 data. This argument can be passed multiple times, with different tasks as input
  - `-a`, `--all-tasks`: passing this argument will run all of the available tasks for the given dataset (either MIMIC3 or MIMIC4). This argument supersedes the `-t` argument
  - `--dev`: whether to read the MIMIC data in "dev" mode. This reads only in samples of the MIMIC data, making evaluation much quicker -- however, the results will not be quite as accurate
 
 All of these flags have default values and do not have to be manually provided.
+
+### Ablations
+
+There were two ablations that I focused on for this work.
+
+#### History Ablation
+
+For this ablation, I omitted patient history information in the data preparation step.
+The RETAIN model was able to handle this data as is.
+For GAMENet, I needed to do make some modifications.
+I removed the Dynamic Memory component from the architecture to make this ablation work properly.
+This ablation can be run with the `"no_hist"` task, which includes both the data preparation differences as well as the model differences.
+
+#### Procedure Ablation
+
+For this ablation, I omitted patient procedure information in the data preparation step.
+I needed to also remove the reference to this as a feature when building the RETAIN model.
+In GAMENet, I removed the Gated Recurrent Unit (GRU) corresponding to the procedure information, and modified the `forward` function to not expect procedure information.
+I also had to remove the processing related to procedures in the architecture.
+This ablation can be run with the `"no_proc"` task, which includes both the data preparation differences as well as the model differences.
 
 ### EDA Notebook
 
