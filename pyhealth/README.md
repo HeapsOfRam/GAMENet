@@ -102,6 +102,19 @@ In GAMENet, I removed the Gated Recurrent Unit (GRU) corresponding to the proced
 I also had to remove the processing related to procedures in the architecture.
 This ablation can be run with the `"no_proc"` task, which includes both the data preparation differences as well as the model differences.
 
+### Tasks
+
+There are 3 tasks that can be run.
+All tasks are created for the MIMIC dataset.
+Primarily, I focused on MIMIC-IV, so only the default task is available in MIMIC-III.
+
+ - `"drug_recommendation"`: this is the default drug recommendation task [from `pyhealth`](https://pyhealth.readthedocs.io/en/latest/api/tasks/pyhealth.tasks.drug_recommendation.html)
+ - `"no_hist"`: this corresponds to the history ablation, and removes the patient history from data processing. It also removes the Dynamic Memory component from the GAMENet architecture.
+ - `"no_proc"`: this corresponds to the procedure ablation, and removes patient procedures from the data processing. It also removes the procedure GRU from the GAMENet architecture.
+
+Tasks (and the corresponding models) are processed in isolation.
+In other words, the `"no_hist"` task makes an instance of GAMENet without the Dynamic Memory component, but other tasks will run with this component (unless explicitly specified otherwise, see [`MODEL_TYPES_PER_TASK` variable in the constants.py file](./constants.py)).
+
 ### EDA Notebook
 
 I've written a notebook showing how to load in the data and train/evaluate some models based on my main logic [in EDA.ipynb](./EDA.ipynb).
