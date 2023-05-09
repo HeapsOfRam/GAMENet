@@ -8,6 +8,17 @@ It accepts several flags, as documented below.
 This script can be run in an environment with the right dependencies, locally, or as a container.
 Please see [the `build_and_run.sh` script](./build_and_run.sh) for details for how to run as a container.
 
+## Background
+
+GAMENet is a model for recommending safe drug combinations to prescribe to patients.
+Patient procedures and conditions are input, fed into embeddings networks and then passed into Gated Recurrent Units (GRU), which forms the basis of a patient representation.
+This patient representation is used as a query against a Dynamic Memory component which contains patient medication history.
+A Memory Bank (Static Memory) component is included as well.
+The Memory Bank sums an EHR Drug Graph together with a DDI Graph.
+The EHR Drug Graph shows drugs that are commonly prescribed together within the EHR dataset, and acts as a positive signal.
+The DDI Graph shows drugs that have interactions when prescribed together, and acts as a negative signal.
+Then, the patient query, the output from the Memory Bank, and the output from the Dynamic Memory are concatenated and fed into a Sigmoid activation function to produce predictions for the current visit.
+
 ## Running the Code
 
 ### Prerequisites
@@ -32,7 +43,22 @@ Once downloaded, please extract and place in the following directory structure:
 
 The code expects the above to be the root path for the MIMIC datasets, though this can be changed by modifying the `_DATA_DIR` variable in [the main entrypoint python script](./gamenet.py).
 
+#### Dependencies
+
+Dependencies are listed in the [requirements.txt file](./requirements.txt).
+Steps for installing these into a virtual environment are shown below.
+The Dockerfile includes a step to install these repositories.
+Additionally, I am using the following version of python:
+
+```bash
+$ python --version
+Python 3.8.16
+```
+
 ### Running
+
+Training and evaluation are both run as part of the same pipeline.
+This can be found either in [the gamenet.py entrypoint](./gamenet.py) or in [the EDA notebook](./EDA.ipynb).
 
 #### Podman/Docker
 
@@ -102,6 +128,19 @@ In GAMENet, I removed the Gated Recurrent Unit (GRU) corresponding to the proced
 I also had to remove the processing related to procedures in the architecture.
 This ablation can be run with the `"no_proc"` task, which includes both the data preparation differences as well as the model differences.
 
+### Tasks
+
+There are 3 tasks that can be run.
+All tasks are created for the MIMIC dataset.
+Primarily, I focused on MIMIC-IV, so only the default task is available in MIMIC-III.
+
+ - `"drug_recommendation"`: this is the default drug recommendation task [from `pyhealth`](https://pyhealth.readthedocs.io/en/latest/api/tasks/pyhealth.tasks.drug_recommendation.html)
+ - `"no_hist"`: this corresponds to the history ablation, and removes the patient history from data processing. It also removes the Dynamic Memory component from the GAMENet architecture.
+ - `"no_proc"`: this corresponds to the procedure ablation, and removes patient procedures from the data processing. It also removes the procedure GRU from the GAMENet architecture.
+
+Tasks (and the corresponding models) are processed in isolation.
+In other words, the `"no_hist"` task makes an instance of GAMENet without the Dynamic Memory component, but other tasks will run with this component (unless explicitly specified otherwise, see [`MODEL_TYPES_PER_TASK` variable in the constants.py file](./constants.py)).
+
 ### EDA Notebook
 
 I've written a notebook showing how to load in the data and train/evaluate some models based on my main logic [in EDA.ipynb](./EDA.ipynb).
@@ -123,6 +162,42 @@ rm -r output/
 Finally, sometimes it is helpful to clean up the podman environment.
 For some reason, I need to force some resources to stop before I am able to `prune` to free up all resources.
 These commands have been organized in the [`cleanup.sh` script](./cleanup.sh).
+
+## Results
+
+Generally, results for various runs can be found [in this directory](./results/).
+Specifically, see the [results of my final run here](./results/final_results.txt).
+These results were generated with the model weights that are saved [in the `output` directory](./output/).
+I put the above results into a table here:
+
+
+| Model   | Task                | Accuracy              | Jaccard Score       | Precision          | Recall              | PR AUC           | F1                 | Avg DPV            | DDI Rate             | Delta DDI Rate         |
+|---------|---------------------|-----------------------|---------------------|--------------------|---------------------|------------------|--------------------|--------------------|----------------------|------------------------|
+| RETAIN  | drug_recommendation | 0.0021432522123893804 | 0.41576684941022884 | 0.7603958754470037 | 0.49021940550346643 | 0.72476353605    | 0.5672969181604842 | 14.045423119469026 | 0.0654986379636298   | -0.012201362036370206  |
+| RETAIN  | no_hist             | 0.0020545130803999454 | 0.4403503103715233  | 0.7692379557407789 | 0.5197915818336155  | 0.7495310957313  | 0.5918108028574632 | 15.063484454184358 | 0.06440503924167078  | -0.013294960758329227  |
+| RETAIN  | no_proc             | 0.0020545130803999454 | 0.39668790639328144 | 0.7536945860602416 | 0.469864026383963   | 0.7093126534065  | 0.550001573210491  | 11.887925673945645 | 0.08184647568115476  | 0.004146475681154754   |
+| GAMENet | drug_recommendation | 0.0015210176991150442 | 0.44669104646620933 | 0.7459566489183552 | 0.5407909737332947  | 0.741756464946   | 0.5988409450140139 | 15.948423672566372 | 0.06999259477481488  | -0.007707405225185121  |
+| GAMENet | no_hist             | 0.0028763183125599234 | 0.462600997469886   | 0.7531064780331098 | 0.5629392744174778  | 0.75796644328869 | 0.6127631391726239 | 17.326599096014245 | 0.061112876787601925 | -0.01658712321239808   |
+| GAMENet | no_proc             | 0.0008047112184059402 | 0.4163686653728236  | 0.7404166023417065 | 0.5055376658406298  | 0.7171681505122  | 0.569333171881927  | 13.442956947949815 | 0.075309192161028    | -0.0023908078389720117 |
+
+
+Avg DPV is average number of drugs recommended per visit.
+DDI Rate is calculated by:
+
+$$\text{DDI Rate} = \frac{\sum^N_{k}\sum^{T_k}_t\sum_{i,j}\text{\textbar}\{(c_i, c_j) \in \hat{Y}^{(k)}_t \text{\textbar} (c_i, c_j) \in E_d\} \text{\textbar}}{\sum^N_k\sum^{T_k}_t\sum_{i,j}1}$$
+
+Where `N` is the number of patients in the test set.
+`T_k` is the number of visits for patient `k`.
+`(c_i,c_j)` is a medication pair in recommendation set `Y_hat`, but is only counted when the pair has an edge set in `E_d` in the DDI graph.
+The numerator is then normalized by the sum of all the medication combinations for every visit for every patient in `T`.
+
+Delta DDI Rate is the change in DDI Rate from the baseline, which is considered in the original paper to be 0.0777.
+
+Interestingly, RETAIN performs quite well here, as does the history ablation.
+The history ablation has a better DDI Rate for GAMENet despite recommending more drugs.
+The accuracy score even increases here.
+However, the Jaccard score does go down.
+It seems RETAIN did have a better DDI Rate in this run, however.
 
 ## Video
 
